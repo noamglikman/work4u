@@ -35,7 +35,7 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (auth) {
     const token = await getIdToken();
-    if (token) headers.Authorization = `Bearer ${token}`;
+    if (token) headers.Authorization = token;
   }
 
   let res: Response;
