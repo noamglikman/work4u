@@ -106,7 +106,10 @@ async function sessionFromCognito(): Promise<AuthSession | null> {
   if (!idToken) return null;
   const payload = idToken.payload as Record<string, unknown>;
   const groups = groupsFromPayload(payload);
-  const isAdmin = groups.includes('admin');
+  // The deployed Cognito admin group is "Admins" (see infrastructure/template.yaml,
+  // which the backend's shared/auth.py matches). Compare case-insensitively and
+  // tolerate "Admin"/"admin" variants so the admin UI unlocks for real admins.
+  const isAdmin = groups.some((g) => g.toLowerCase() === 'admins' || g.toLowerCase() === 'admin');
   return {
     user: {
       userId: String(payload.sub ?? ''),
