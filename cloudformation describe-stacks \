@@ -1,0 +1,13 @@
+-------------------------------------------------------------------------------------------------------------------------------
+|                                                       DescribeStacks                                                        |
++----------------------------------+---------------------------+--------------------------------------------------------------+
+|            Description           |         OutputKey         |                         OutputValue                          |
++----------------------------------+---------------------------+--------------------------------------------------------------+
+|  [1m[34mCognito User Pool Client ID[0m     |  [1m[34mUserPoolClientId[0m         |  [1m[34m3vqhbrqe0lqr7brm108fcu57qq[0m                                  |
+|  [1m[34mDynamoDB Venues table[0m           |  [1m[34mVenuesTableName[0m          |  [1m[34mWork4U_Venues[0m                                               |
+|  [1m[34mAPI Gateway base URL[0m            |  [1m[34mApiBaseUrl[0m               |  [1m[34mhttps://8cv7ir3d65.execute-api.us-east-1.amazonaws.com/dev[0m  |
+|  [1m[34mDynamoDB User Preferences table[0m |  [1m[34mUserPreferencesTableName[0m |  [1m[34mWork4U_UserPreferences[0m                                      |
+|  [1m[34mCognito User Pool ID[0m            |  [1m[34mUserPoolId[0m               |  [1m[34mus-east-1_K5OnGgigE[0m                                         |
+|  [1m[34mDynamoDB Ratings table[0m          |  [1m[34mRatingsTableName[0m         |  [1m[34mWork4U_Ratings[0m                                              |
+|  [1m[34mS3 bucket for venue images[0m      |  [1m[34mVenueImagesBucketName[0m    |  [1m[34mwork4u-venue-images-381492037695-us-east-1[0m                  |
++----------------------------------+---------------------------+--------------------------------------------------------------+
