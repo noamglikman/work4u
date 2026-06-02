@@ -8,3 +8,58 @@ dist/
 *.tsbuildinfo
 frontend/dist/
 frontend/.env
+
+# Local environments
+.venv/
+.env
+frontend/.env
+
+# Build outputs
+frontend/dist/
+dist/
+
+# TypeScript build cache
+*.tsbuildinfo
+
+# Temporary/editor files
+*.save
+
+# AWS local credentials/config - never commit
+.aws/
+.aws-sam/
+samconfig.toml
+
+# Python virtual environment
+.venv/
+
+# Frontend local env and build
+frontend/.env
+frontend/dist/
+dist/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Temporary/editor files
+*.save
+
+# AWS/SAM local artifacts
+.aws-sam/
+samconfig.toml
+
+# Local Python environment
+.venv/
+
+# AWS SAM build output
+.aws-sam/
+
+# Frontend local env and build output
+frontend/.env
+frontend/dist/
+dist/
+
+# TypeScript build cache
+*.tsbuildinfo
+
+# Temporary files
+*.save

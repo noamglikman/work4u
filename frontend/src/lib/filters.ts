@@ -17,7 +17,7 @@ export interface Filters {
 }
 
 export const DEFAULT_FILTERS: Filters = {
-  radiusKm: 5,
+  radiusKm: 25,
   quiet: false,
   power: false,
   wifi: false,

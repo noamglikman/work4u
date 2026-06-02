@@ -1,4 +1,6 @@
 import os
+import math
+from decimal import Decimal
 
 import boto3
 
@@ -12,14 +14,6 @@ venues_table = dynamodb.Table(VENUES_TABLE)
 
 
 def lambda_handler(event, context):
-    """
-    Handles venue requests.
-
-    Supported routes:
-    GET /venues
-    GET /venues/{venueId}
-    """
-
     try:
         method = event.get("httpMethod", "")
 
@@ -76,9 +70,7 @@ def get_all_venues(event):
 
 def get_venue_by_id(venue_id):
     response = venues_table.get_item(
-        Key={
-            "venueId": venue_id
-        }
+        Key={"venueId": venue_id}
     )
 
     venue = response.get("Item")
@@ -108,13 +100,16 @@ def apply_filters(venues, query_params):
     quiet_environment = query_params.get("quietEnvironment")
     need_power_outlet = query_params.get("needPowerOutlet")
 
+    user_lat = parse_float(query_params.get("lat"))
+    user_lng = parse_float(query_params.get("lng"))
+    radius_km = parse_float(query_params.get("radiusKm"))
+
     if search:
         search_lower = search.lower()
-
         result = [
             venue for venue in result
-            if search_lower in venue.get("name", "").lower()
-            or search_lower in venue.get("address", "").lower()
+            if search_lower in str(venue.get("name", "")).lower()
+            or search_lower in str(venue.get("address", "")).lower()
         ]
 
     if price_range and price_range != "any":
@@ -141,21 +136,64 @@ def apply_filters(venues, query_params):
             if venue.get("hasPowerOutlets") is True
         ]
 
+    if user_lat is not None and user_lng is not None and radius_km is not None:
+        venues_with_distance = []
+
+        for venue in result:
+            venue_lat = parse_float(venue.get("latitude"))
+            venue_lng = parse_float(venue.get("longitude"))
+
+            if venue_lat is None or venue_lng is None:
+                continue
+
+            distance = haversine_km(user_lat, user_lng, venue_lat, venue_lng)
+
+            if distance <= radius_km:
+                venue["distanceKm"] = Decimal(str(round(distance, 2)))
+                venues_with_distance.append(venue)
+
+        result = sorted(
+            venues_with_distance,
+            key=lambda venue: float(venue.get("distanceKm", 999999))
+        )
+
     return result
+
+
+def parse_float(value):
+    if value is None:
+        return None
+
+    try:
+        return float(value)
+    except (ValueError, TypeError):
+        return None
+
+
+def haversine_km(lat1, lng1, lat2, lng2):
+    earth_radius_km = 6371.0
+
+    lat1_rad = math.radians(lat1)
+    lng1_rad = math.radians(lng1)
+    lat2_rad = math.radians(lat2)
+    lng2_rad = math.radians(lng2)
+
+    dlat = lat2_rad - lat1_rad
+    dlng = lng2_rad - lng1_rad
+
+    a = (
+        math.sin(dlat / 2) ** 2
+        + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlng / 2) ** 2
+    )
+
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+    return earth_radius_km * c
 
 
 def build_default_forecast():
     return [
-        {
-            "hour": "09:00",
-            "crowdLevel": "free"
-        },
-        {
-            "hour": "12:00",
-            "crowdLevel": "reasonable"
-        },
-        {
-            "hour": "18:00",
-            "crowdLevel": "crowded"
-        }
+        {"hour": "09:00", "crowdLevel": "free"},
+        {"hour": "12:00", "crowdLevel": "reasonable"},
+        {"hour": "18:00", "crowdLevel": "crowded"}
     ]

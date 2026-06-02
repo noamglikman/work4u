@@ -2,12 +2,13 @@
 // Form state is the API-contract shape (UserPreferencesInput); the toggles/chips
 // just map enum values to Hebrew. Saving calls POST /preferences.
 
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode, type Dispatch, type SetStateAction } from 'react';
 import { ApiError } from '../api';
 import { usePreferences } from '../hooks/usePreferences';
 import { useToast } from '../context/ToastContext';
 import type { Navigate } from '../types/nav';
 import type { PriceRange, UserPreferencesInput } from '../types/api';
+import type { Filters } from '../lib/filters';
 import { PRICE_LABEL, SEAT_LABEL, SEAT_OPTIONS } from '../lib/labels';
 import { Button, Icon, Tag } from '../components/ui';
 import type { IconName } from '../components/ui';
@@ -22,7 +23,15 @@ const FALLBACK: UserPreferencesInput = {
 
 const PRICE_OPTIONS: PriceRange[] = ['low', 'medium', 'high'];
 
-export function Preferences({ go, onboarding }: { go: Navigate; onboarding: boolean }) {
+export function Preferences({
+  go,
+  onboarding,
+  setHomeFilters,
+}: {
+  go: Navigate;
+  onboarding: boolean;
+  setHomeFilters?: Dispatch<SetStateAction<Filters>>;
+}) {
   const { preferences, loading, saving, save } = usePreferences();
   const { toast } = useToast();
   const [form, setForm] = useState<UserPreferencesInput>(FALLBACK);
@@ -44,7 +53,16 @@ export function Preferences({ go, onboarding }: { go: Navigate; onboarding: bool
 
   const onSave = async () => {
     try {
-      await save(form);
+      const saved = await save(form);
+
+      setHomeFilters?.((prev) => ({
+        ...prev,
+        quiet: saved.quietEnvironment,
+        power: saved.needPowerOutlet,
+        wifi: saved.wifiQuality === 'high',
+        price: saved.priceRange,
+      }));
+
       toast('הפרופיל האישי שלך עודכן בהצלחה! התוצאות יותאמו עבורך אוטומטית', 'success');
       setTimeout(() => go('home'), 600);
     } catch (e) {

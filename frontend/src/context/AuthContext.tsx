@@ -1,6 +1,6 @@
 // context/AuthContext.tsx — current authentication state + actions.
 // Wraps the `auth` service (Cognito or mock) so screens get a simple, reactive
-// view of "who am I / am I admin" and the sign-in/up/out actions.
+// view of "who I am / am I admin" and the sign-in/up/out actions.
 
 import {
   createContext,
@@ -18,10 +18,10 @@ interface AuthContextValue {
   session: AuthSession | null;
   isAuthenticated: boolean;
   isAdmin: boolean;
-  /** True while the initial session restore is in flight. */
   loading: boolean;
   signIn: (email: string, password: string, opts?: SignInOptions) => Promise<AuthSession>;
   signUp: (email: string, password: string) => Promise<SignUpResult>;
+  confirmSignUp: (email: string, code: string) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -34,11 +34,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let active = true;
+
     auth
       .getSession()
       .then((s) => active && setSession(s))
       .catch(() => active && setSession(null))
       .finally(() => active && setLoading(false));
+
     return () => {
       active = false;
     };
@@ -58,7 +60,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  const resetPassword = useCallback((email: string) => auth.resetPassword(email), []);
+  const confirmSignUp = useCallback(
+    (email: string, code: string) => auth.confirmSignUp(email, code),
+    [],
+  );
+
+  const resetPassword = useCallback(
+    (email: string) => auth.resetPassword(email),
+    [],
+  );
 
   const signOut = useCallback(async () => {
     await auth.signOut();
@@ -73,10 +83,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loading,
       signIn,
       signUp,
+      confirmSignUp,
       resetPassword,
       signOut,
     }),
-    [session, loading, signIn, signUp, resetPassword, signOut],
+    [session, loading, signIn, signUp, confirmSignUp, resetPassword, signOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -84,6 +95,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth(): AuthContextValue {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within <AuthProvider>');
+
+  if (!ctx) {
+    throw new Error('useAuth must be used within <AuthProvider>');
+  }
+
   return ctx;
 }

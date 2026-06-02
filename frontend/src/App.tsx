@@ -7,6 +7,7 @@ import { useTheme } from './context/ThemeContext';
 import { useGeolocation } from './hooks/useGeolocation';
 import { useVenues } from './hooks/useVenues';
 import { buildVenueQuery, DEFAULT_FILTERS, type Filters } from './lib/filters';
+import { getSearchLocationById } from './lib/searchLocations';
 import { isOpenNow } from './lib/hours';
 import { buildRootVars } from './lib/theme';
 import type { Screen } from './types/nav';
@@ -35,6 +36,7 @@ export default function App() {
   const { isAuthenticated, isAdmin, loading: authLoading } = useAuth();
   const { tweaks } = useTheme();
   const { location } = useGeolocation();
+  const [searchLocationId, setSearchLocationId] = useState('current');
 
   const [screen, setScreen] = useState<Screen | null>(null);
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
@@ -61,11 +63,18 @@ export default function App() {
     go('venue');
   };
 
+  const selectedSearchLocation = useMemo(
+    () => getSearchLocationById(searchLocationId),
+    [searchLocationId],
+  );
+
+  const effectiveLocation = selectedSearchLocation.location ?? location;
+
   // Home venue list — only fetched once authenticated.
-  const query = useMemo(() => buildVenueQuery(filters, search, location), [filters, search, location]);
+  const query = useMemo(() => buildVenueQuery(filters, search, effectiveLocation), [filters, search, effectiveLocation]);
   const { venues, loading: venuesLoading, error: venuesError, reload: reloadVenues } = useVenues(
     query,
-    location,
+    effectiveLocation,
     isAuthenticated,
   );
   const visibleVenues = useMemo(
@@ -122,9 +131,9 @@ export default function App() {
   } else if (effective === 'signup') {
     content = <Signup go={go} />;
   } else if (effective === 'prefs') {
-    content = <Preferences go={go} onboarding />;
+    content = <Preferences go={go} onboarding setHomeFilters={setFilters} />;
   } else if (effective === 'prefs-edit') {
-    content = <Preferences go={go} onboarding={false} />;
+    content = <Preferences go={go} onboarding={false} setHomeFilters={setFilters} />;
   } else if (effective === 'home') {
     content = (
       <Home
@@ -136,7 +145,9 @@ export default function App() {
         setSearch={setSearch}
         filters={filters}
         setFilters={setFilters}
-        location={location}
+        location={effectiveLocation}
+        searchLocationId={searchLocationId}
+        setSearchLocationId={setSearchLocationId}
       />
     );
   } else if (effective === 'venue' && selectedVenueId) {
@@ -144,7 +155,7 @@ export default function App() {
       <Venue
         venueId={selectedVenueId}
         go={go}
-        location={location}
+        location={effectiveLocation}
         openRating={(t) => setRatingTarget(t)}
       />
     );

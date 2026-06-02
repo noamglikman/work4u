@@ -6,6 +6,7 @@ import type { Filters } from '../lib/filters';
 import type { PriceRangeFilter } from '../types/api';
 import type { LatLng } from '../lib/geo';
 import { PRICE_FILTER_LABEL } from '../lib/labels';
+import { SEARCH_LOCATIONS } from '../lib/searchLocations';
 import { Icon, OccPill, Photo, Tag, type IconName } from '../components/ui';
 import { MapCanvas } from '../components/MapCanvas';
 import { VenueListCard } from '../components/VenueListCard';
@@ -20,6 +21,8 @@ interface HomeProps {
   filters: Filters;
   setFilters: React.Dispatch<React.SetStateAction<Filters>>;
   location: LatLng;
+  searchLocationId: string;
+  setSearchLocationId: (id: string) => void;
 }
 
 type BoolFilterKey = 'quiet' | 'power' | 'wifi' | 'open';
@@ -43,6 +46,8 @@ export function Home({
   filters,
   setFilters,
   location,
+  searchLocationId,
+  setSearchLocationId,
 }: HomeProps) {
   const [selected, setSelected] = useState<string | null>(null);
   const [showAdv, setShowAdv] = useState(false);
@@ -98,6 +103,43 @@ export function Home({
               }}
             />
           </div>
+          <div style={{ marginTop: 12 }}>
+            <label
+              style={{
+                display: 'block',
+                fontSize: 13,
+                fontWeight: 700,
+                color: 'var(--w4-muted)',
+                marginBottom: 6,
+              }}
+            >
+              אזור חיפוש
+            </label>
+            <select
+              value={searchLocationId}
+              onChange={(e) => setSearchLocationId(e.target.value)}
+              style={{
+                width: '100%',
+                border: 'none',
+                outline: 'none',
+                background: 'var(--w4-surface)',
+                color: 'var(--w4-text)',
+                borderRadius: 'var(--w4-radius-sm)',
+                padding: '11px 14px',
+                fontFamily: 'inherit',
+                fontSize: 14.5,
+                fontWeight: 600,
+                boxShadow: 'inset 0 0 0 1.5px var(--w4-border)',
+              }}
+            >
+              {SEARCH_LOCATIONS.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, marginTop: 12 }}>
             {CHIPS.map(([k, l, ic]) => (
               <Tag key={k} icon={ic} active={filters[k]} onClick={() => setF(k, !filters[k])}>
@@ -128,13 +170,13 @@ export function Home({
               >
                 <span style={{ fontSize: 13.5, fontWeight: 700 }}>רדיוס חיפוש</span>
                 <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--w4-accent)' }}>
-                  {filters.radiusKm >= 10 ? '10+ ק״מ' : filters.radiusKm + ' ק״מ'}
+                  {filters.radiusKm + ' ק״מ'}
                 </span>
               </div>
               <input
                 type="range"
                 min="1"
-                max="10"
+                max="100"
                 value={filters.radiusKm}
                 onChange={(e) => setF('radiusKm', +e.target.value)}
                 style={{ width: '100%', accentColor: 'var(--w4-accent)' }}
