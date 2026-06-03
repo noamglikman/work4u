@@ -44,6 +44,9 @@ export interface VenuePreview {
   tags: string[];
   /** Opening hours, when the backend includes them on the summary. */
   openingHours?: string;
+  placeType?: string;
+  matchScore?: number;
+  learningScore?: number;
 }
 
 /** Full venue detail page model. */

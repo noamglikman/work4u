@@ -80,6 +80,12 @@ export interface VenueSummary {
   averageRating: number;
   currentCrowdLevel: CrowdLevel;
   mainImageUrl?: string;
+  categoryLabel?: string;
+  accessNote?: string;
+  contactNote?: string;
+  website?: string;
+  phone?: string;
+  email?: string;
   isActive?: boolean;
   /**
    * Optional extra the backend MAY include on summaries; used by the client-side
@@ -109,6 +115,12 @@ export interface VenueInput {
   hasPowerOutlets: boolean;
   description: string;
   imageUrls: string[];
+  categoryLabel?: string;
+  accessNote?: string;
+  contactNote?: string;
+  website?: string;
+  phone?: string;
+  email?: string;
 }
 
 /** Rating (§7.6, §9.4). */
@@ -148,6 +160,35 @@ export interface VenueQuery {
   quietEnvironment?: boolean;
   needPowerOutlet?: boolean;
 }
+
+
+/** Personalization profile returned by GET /learning. */
+export interface UserLearningProfile {
+  userId: string;
+  categoryScores: Record<string, number>;
+  searchTermScores: Record<string, number>;
+  totalEvents: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/** Body for POST /learning/event. */
+export type LearningEventInput =
+  | {
+      type: 'search';
+      searchTerm: string;
+    }
+  | {
+      type: 'open_venue';
+      venueId: string;
+      placeType?: string;
+    }
+  | {
+      type: 'rating';
+      venueId: string;
+      placeType?: string;
+      rating: number;
+    };
 
 /** Response of POST /admin/venues/{id}/images/upload-url (§8.4). */
 export interface UploadUrlResponse {

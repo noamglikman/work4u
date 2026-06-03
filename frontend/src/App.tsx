@@ -2,6 +2,7 @@
 // for the home venue list + smart-push (ported from work4u-web-app.jsx).
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { api } from './api';
 import { useAuth } from './context/AuthContext';
 import { useTheme } from './context/ThemeContext';
 import { useGeolocation } from './hooks/useGeolocation';
@@ -28,7 +29,7 @@ import { History } from './screens/History';
 import { Profile } from './screens/Profile';
 
 type Overlay = 'forgot' | 'admin' | null;
-type RatingTarget = { id: string; name: string } | null;
+type RatingTarget = { id: string; name: string; placeType?: string } | null;
 
 const isAuthScreen = (s: Screen) => s === 'login' || s === 'signup';
 
@@ -46,6 +47,7 @@ export default function App() {
   const [ratingTarget, setRatingTarget] = useState<RatingTarget>(null);
   const [push, setPush] = useState<RatingTarget>(null);
   const pushedOnce = useRef(false);
+  const lastLearningSearchRef = useRef('');
 
   // Decide the first screen once auth state has resolved.
   useEffect(() => {
@@ -77,6 +79,33 @@ export default function App() {
     effectiveLocation,
     isAuthenticated,
   );
+
+  // Behavior learning: search terms.
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const term = search.trim();
+
+    if (term.length < 2) return;
+    if (term === lastLearningSearchRef.current) return;
+
+    const handle = window.setTimeout(() => {
+      lastLearningSearchRef.current = term;
+
+      void api.learning
+        .record({
+          type: 'search',
+          searchTerm: term,
+        })
+        .then(() => reloadVenues())
+        .catch(() => {
+          // Learning should never block the user experience.
+        });
+    }, 800);
+
+    return () => window.clearTimeout(handle);
+  }, [search, isAuthenticated, reloadVenues]);
+
   const visibleVenues = useMemo(
     () => (filters.open ? venues.filter((v) => isOpenNow(v.openingHours)) : venues),
     [venues, filters.open],

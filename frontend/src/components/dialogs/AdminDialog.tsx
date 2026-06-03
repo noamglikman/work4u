@@ -25,7 +25,16 @@ interface AdminDialogProps {
 
 export function AdminDialog({ close, onPublished }: AdminDialogProps) {
   const { toast } = useToast();
-  const [form, setForm] = useState({ name: '', address: '', hours: '', price: 'medium' as PriceRange });
+  const [form, setForm] = useState({
+    name: '',
+    address: '',
+    hours: '',
+    price: 'medium' as PriceRange,
+    website: '',
+    phone: '',
+    email: '',
+    accessNote: '',
+  });
   const [files, setFiles] = useState<File[]>([]);
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
@@ -60,8 +69,16 @@ export function AdminDialog({ close, onPublished }: AdminDialogProps) {
         wifiQuality: 'medium',
         noiseLevel: 'medium',
         hasPowerOutlets: true,
-        description: '',
+        description: form.accessNote.trim(),
         imageUrls: [],
+        categoryLabel: 'מקום עבודה',
+        accessNote: form.accessNote.trim(),
+        contactNote: form.website.trim() || form.phone.trim() || form.email.trim()
+          ? 'מומלץ לבדוק זמינות, שעות פעילות ותנאי כניסה מול המקום.'
+          : '',
+        website: form.website.trim(),
+        phone: form.phone.trim(),
+        email: form.email.trim(),
       };
 
       const { venueId } = await api.venues.create(input);
@@ -164,6 +181,32 @@ export function AdminDialog({ close, onPublished }: AdminDialogProps) {
             placeholder="08:00-22:00"
             error={err && !form.hours.trim() ? 'שדה חובה' : ''}
           />
+          <Field
+            label="אתר"
+            value={form.website}
+            onChange={(v) => set('website', v)}
+            placeholder="https://example.com"
+          />
+          <Field
+            label="טלפון"
+            value={form.phone}
+            onChange={(v) => set('phone', v)}
+            placeholder="03-0000000"
+          />
+          <Field
+            label="אימייל"
+            value={form.email}
+            onChange={(v) => set('email', v)}
+            placeholder="info@example.com"
+          />
+          <div style={{ gridColumn: 'span 2' }}>
+            <Field
+              label="הערת כניסה / תשלום"
+              value={form.accessNote}
+              onChange={(v) => set('accessNote', v)}
+              placeholder="לדוגמה: כניסה בתשלום, יש לבדוק זמינות מול המקום"
+            />
+          </div>
           <div>
             <div
               style={{

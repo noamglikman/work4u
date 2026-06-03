@@ -8,7 +8,7 @@ import type { CrowdLevel } from '../../types/api';
 import { Button, Icon, Stars } from '../ui';
 
 interface RatingModalProps {
-  target: { id: string; name: string };
+  target: { id: string; name: string; placeType?: string };
   close: () => void;
   onSubmitted?: () => void;
 }
@@ -35,6 +35,20 @@ export function RatingModal({ target, close, onSubmitted }: RatingModalProps) {
         wifiRating: wifi || 4,
         noiseRating: noise || 3,
       });
+
+      const inferredRating = 4;
+
+      await api.learning
+        .record({
+          type: 'rating',
+          venueId: target.id,
+          placeType: (target as any).placeType,
+          rating: inferredRating,
+        })
+        .catch(() => {
+          // Learning is best-effort and should not block rating submission.
+        });
+
       close();
       onSubmitted?.();
       setTimeout(() => toast('תודה רבה! הדיווח שלך נקלט בהצלחה ועוזר לדייק את התוצאות', 'success'), 60);

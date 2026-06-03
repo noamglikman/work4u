@@ -184,6 +184,29 @@ export const mockApi: Api = {
     },
   },
 
+  learning: {
+    async get() {
+      return {
+        userId: 'mock-user',
+        categoryScores: {},
+        searchTermScores: {},
+        totalEvents: 0,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+    },
+    async record() {
+      return {
+        userId: 'mock-user',
+        categoryScores: {},
+        searchTermScores: {},
+        totalEvents: 0,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+    },
+  },
+
   storage: {
     async uploadVenuePhoto(_venueId, file) {
       await delay();

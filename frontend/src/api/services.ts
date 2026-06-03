@@ -6,6 +6,8 @@ import type {
   Rating,
   RatingInput,
   RatingUpdate,
+  LearningEventInput,
+  UserLearningProfile,
   UploadUrlResponse,
   UserPreferences,
   UserPreferencesInput,
@@ -58,6 +60,13 @@ export interface RatingService {
   remove(ratingId: string): Promise<{ ratingId: string }>;
 }
 
+export interface LearningService {
+  /** GET /learning */
+  get(): Promise<UserLearningProfile>;
+  /** POST /learning/event */
+  record(input: LearningEventInput): Promise<UserLearningProfile>;
+}
+
 export interface StorageService {
   /**
    * Full presigned-URL upload (api-contract §8.4 + AWS guide §6):
@@ -72,5 +81,6 @@ export interface Api {
   venues: VenueService;
   preferences: PreferenceService;
   ratings: RatingService;
+  learning: LearningService;
   storage: StorageService;
 }

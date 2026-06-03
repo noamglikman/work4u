@@ -129,6 +129,12 @@ def create_venue(event):
         "hasPowerOutlets": data["hasPowerOutlets"],
         "description": data.get("description", ""),
         "imageUrls": data.get("imageUrls", []),
+        "categoryLabel": data.get("categoryLabel", ""),
+        "accessNote": data.get("accessNote", ""),
+        "contactNote": data.get("contactNote", ""),
+        "website": data.get("website", ""),
+        "phone": data.get("phone", ""),
+        "email": data.get("email", ""),
         "averageRating": Decimal("0"),
         "currentCrowdLevel": data.get("currentCrowdLevel", "reasonable"),
         "isActive": True,
@@ -182,6 +188,12 @@ def update_venue(event, venue_id):
         "hasPowerOutlets",
         "description",
         "imageUrls",
+        "categoryLabel",
+        "accessNote",
+        "contactNote",
+        "website",
+        "phone",
+        "email",
         "currentCrowdLevel"
     ]
 
@@ -421,6 +433,15 @@ def validate_venue_payload(data, is_update=False):
             error_code="VALIDATION_ERROR",
             status_code=400
         )
+
+
+    for optional_text_field in ["categoryLabel", "accessNote", "contactNote", "website", "phone", "email"]:
+        if optional_text_field in data and not isinstance(data[optional_text_field], str):
+            return error_response(
+                message=f"{optional_text_field} must be a string",
+                error_code="VALIDATION_ERROR",
+                status_code=400
+            )
 
     return None
 

@@ -40,6 +40,8 @@ function cleanUrl(url: string | undefined): string | undefined {
 
 export function toVenuePreview(v: VenueSummary, user?: LatLng): VenuePreview {
   const distanceKm = user ? haversineKm(user, { lat: v.latitude, lng: v.longitude }) : undefined;
+  const rawImageUrls = Array.isArray((v as any).imageUrls) ? (v as any).imageUrls : [];
+  const firstImageUrl = rawImageUrls.map(cleanUrl).find(Boolean);
   return {
     id: v.venueId,
     name: v.name,
@@ -57,12 +59,21 @@ export function toVenuePreview(v: VenueSummary, user?: LatLng): VenuePreview {
     hasPowerOutlets: v.hasPowerOutlets,
     crowdLevel: v.currentCrowdLevel,
     rating: v.averageRating,
-    imageUrl: cleanUrl(v.mainImageUrl),
+    imageUrl: cleanUrl(v.mainImageUrl) ?? firstImageUrl,
     accent: placeholderColor(v.venueId),
     emoji: placeholderEmoji(v.venueId),
     tags: deriveTags(v),
     openingHours: v.openingHours,
-  };
+    placeType: (v as any).placeType,
+    matchScore: Number((v as any).matchScore ?? 0),
+    learningScore: Number((v as any).learningScore ?? 0),
+    categoryLabel: (v as any).categoryLabel,
+    accessNote: (v as any).accessNote,
+    contactNote: (v as any).contactNote,
+    website: (v as any).website,
+    phone: (v as any).phone,
+    email: (v as any).email,
+  } as VenuePreview;
 }
 
 export function toForecastBars(forecast: VenueDetail['forecast']): ForecastBar[] {
@@ -79,13 +90,22 @@ export function toVenueView(v: VenueDetail, user?: LatLng): VenueView {
   return {
     ...preview,
     openingHours: v.openingHours,
+    placeType: (v as any).placeType,
+    matchScore: Number((v as any).matchScore ?? 0),
+    learningScore: Number((v as any).learningScore ?? 0),
     description: v.description,
     imageUrls: (v.imageUrls ?? []).map(cleanUrl).filter((u): u is string => Boolean(u)),
     forecast: toForecastBars(v.forecast),
     wifiLabel: WIFI_LABEL[v.wifiQuality],
     noiseLabel: NOISE_LABEL[v.noiseLevel],
     powerLabel: powerLabel(v.hasPowerOutlets),
-  };
+    categoryLabel: (v as any).categoryLabel,
+    accessNote: (v as any).accessNote,
+    contactNote: (v as any).contactNote,
+    website: (v as any).website,
+    phone: (v as any).phone,
+    email: (v as any).email,
+  } as VenueView;
 }
 
 export function toRatingView(r: Rating): RatingView {

@@ -4,6 +4,8 @@
 
 import type {
   Rating,
+  LearningEventInput,
+  UserLearningProfile,
   UploadUrlResponse,
   UserPreferences,
   UserProfile,
@@ -55,6 +57,12 @@ export const liveApi: Api = {
       ),
     remove: (ratingId) =>
       http.del<{ ratingId: string }>(`/ratings/${encodeURIComponent(ratingId)}`),
+  },
+
+  learning: {
+    get: () => http.get<UserLearningProfile>('/learning'),
+    record: (input: LearningEventInput) =>
+      http.post<UserLearningProfile>('/learning/event', input),
   },
 
   storage: {

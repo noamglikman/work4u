@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import type { VenuePreview } from '../types/view';
-import type { Filters } from '../lib/filters';
+import { DEFAULT_FILTERS, type Filters } from '../lib/filters';
 import type { PriceRangeFilter } from '../types/api';
 import type { LatLng } from '../lib/geo';
 import { PRICE_FILTER_LABEL } from '../lib/labels';
@@ -141,6 +141,17 @@ export function Home({
           </div>
 
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, marginTop: 12 }}>
+            <Tag
+              icon="sliders"
+              active={false}
+              onClick={() => {
+                setSearch('');
+                setFilters(DEFAULT_FILTERS);
+              }}
+            >
+              איפוס סינון
+            </Tag>
+
             {CHIPS.map(([k, l, ic]) => (
               <Tag key={k} icon={ic} active={filters[k]} onClick={() => setF(k, !filters[k])}>
                 {l}

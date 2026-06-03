@@ -63,3 +63,23 @@ dist/
 
 # Temporary files
 *.save
+
+# Python virtual environment
+.venv/
+
+# AWS SAM build output
+.aws-sam/
+
+# Frontend build output
+frontend/dist/
+dist/
+
+# Local env files
+.env
+frontend/.env
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Temporary/editor files
+*.save

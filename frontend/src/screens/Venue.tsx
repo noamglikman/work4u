@@ -1,7 +1,10 @@
+import { useEffect, useRef } from 'react';
 // screens/Venue.tsx — full workspace profile (ported from WebVenue).
 // Fetches GET /venues/{id} via useVenue and maps it to the view model.
 
+import { api } from '../api';
 import { useVenue } from '../hooks/useVenues';
+import { useAuth } from '../context/AuthContext';
 import { nowForecastIndex } from '../lib/mappers';
 import type { LatLng } from '../lib/geo';
 import type { Navigate } from '../types/nav';
@@ -12,11 +15,30 @@ interface VenueProps {
   venueId: string;
   go: Navigate;
   location: LatLng;
-  openRating: (target: { id: string; name: string }) => void;
+  openRating: (target: { id: string; name: string; placeType?: string }) => void;
 }
 
 export function Venue({ venueId, go, location, openRating }: VenueProps) {
+  const { isAdmin } = useAuth();
   const { venue: v, loading, error } = useVenue(venueId, location);
+  const sentOpenLearningRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!v) return;
+    if (sentOpenLearningRef.current === v.id) return;
+
+    sentOpenLearningRef.current = v.id;
+
+    void api.learning
+      .record({
+        type: 'open_venue',
+        venueId: v.id,
+        placeType: (v as any).placeType,
+      })
+      .catch(() => {
+        // Learning is best-effort and should not block the page.
+      });
+  }, [v]);
 
   const BackButton = (
     <button
@@ -64,13 +86,32 @@ export function Venue({ venueId, go, location, openRating }: VenueProps) {
   }
 
   const nowIdx = nowForecastIndex(v.forecast, new Date().getHours());
+
+  const realImages = (v.imageUrls ?? []).filter((src) => src && src.trim().length > 0);
+  const hasRealImages = realImages.length > 0;
   const placeholders = [v.accent, '#A88B6B', '#7E8B72', '#9A7B86'];
-  const tiles = Array.from({ length: 4 }, (_, i) => ({
-    src: v.imageUrls[i],
+
+  const tiles = Array.from({ length: Math.min(Math.max(realImages.length, 1), 4) }, (_, i) => ({
+    src: realImages[i],
     color: placeholders[i % placeholders.length],
-    emoji: i === 0 ? v.emoji : undefined,
-    label: i === 0 ? 'gallery · Amazon S3' : `photo ${i + 1}`,
+    emoji: !hasRealImages && i === 0 ? v.emoji : undefined,
+    label: hasRealImages ? `תמונה ${i + 1}` : 'אין תמונה זמינה',
   }));
+
+
+  const website = ((v as any).website ?? '').trim();
+  const phone = ((v as any).phone ?? '').trim();
+  const email = ((v as any).email ?? '').trim();
+  const contactNote = ((v as any).contactNote ?? '').trim();
+  const accessNote = ((v as any).accessNote ?? '').trim();
+  const categoryLabel = ((v as any).categoryLabel ?? '').trim();
+
+  const hasContactInfo = Boolean(website || phone || email || contactNote || accessNote || categoryLabel);
+
+  const openWebsite = () => {
+    const normalized = website.startsWith('http') ? website : `https://${website}`;
+    window.open(normalized, '_blank', 'noopener');
+  };
 
   const navigate = () => {
     const url = `https://www.google.com/maps/dir/?api=1&destination=${v.lat},${v.lng}`;
@@ -81,31 +122,82 @@ export function Venue({ venueId, go, location, openRating }: VenueProps) {
     <div style={{ maxWidth: 1080, margin: '0 auto', padding: '24px 24px 60px' }}>
       {BackButton}
 
-      {/* gallery */}
-      <div
-        className="w4-gallery"
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '2fr 1fr 1fr',
-          gridTemplateRows: '1fr 1fr',
-          gap: 10,
-          height: 320,
-          marginBottom: 22,
-        }}
-      >
-        <div style={{ gridRow: 'span 2', borderRadius: 'var(--w4-radius)', overflow: 'hidden' }}>
-          <Photo color={tiles[0].color} emoji={tiles[0].emoji} h={320} label={tiles[0].label} src={tiles[0].src} />
+      {/* gallery / clean fallback */}
+      {hasRealImages ? (
+        <div
+          className="w4-gallery"
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '2fr 1fr 1fr',
+            gridTemplateRows: '1fr 1fr',
+            gap: 10,
+            height: 320,
+            marginBottom: 22,
+          }}
+        >
+          <div style={{ gridRow: 'span 2', borderRadius: 'var(--w4-radius)', overflow: 'hidden' }}>
+            <Photo color={tiles[0].color} h={320} label={tiles[0].label} src={tiles[0].src} />
+          </div>
+
+          {[1, 2].map((i) => (
+            <div key={i} style={{ borderRadius: 'var(--w4-radius)', overflow: 'hidden' }}>
+              {tiles[i]?.src ? (
+                <Photo color={tiles[i].color} h={155} label={tiles[i].label} src={tiles[i].src} />
+              ) : (
+                <Photo color={placeholders[i % placeholders.length]} h={155} label="תמונה לא זמינה" />
+              )}
+            </div>
+          ))}
+
+          <div style={{ gridColumn: 'span 2', borderRadius: 'var(--w4-radius)', overflow: 'hidden' }}>
+            {tiles[3]?.src ? (
+              <Photo color={tiles[3].color} h={155} label={tiles[3].label} src={tiles[3].src} />
+            ) : (
+              <Photo color={placeholders[3]} h={155} label="תמונה לא זמינה" />
+            )}
+          </div>
         </div>
-        <div style={{ borderRadius: 'var(--w4-radius)', overflow: 'hidden' }}>
-          <Photo color={tiles[1].color} h={155} label={tiles[1].label} src={tiles[1].src} />
+      ) : (
+        <div
+          style={{
+            height: 260,
+            borderRadius: 'var(--w4-radius)',
+            background:
+              'linear-gradient(135deg, var(--w4-surface), var(--w4-surface-2))',
+            boxShadow: 'var(--w4-shadow-sm)',
+            marginBottom: 22,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            textAlign: 'center',
+            padding: 28,
+            color: 'var(--w4-muted)',
+            position: 'relative',
+            overflow: 'hidden',
+          }}
+        >
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              opacity: 0.08,
+              backgroundImage:
+                'repeating-linear-gradient(45deg, var(--w4-text) 0, var(--w4-text) 2px, transparent 2px, transparent 14px)',
+            }}
+          />
+
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <div style={{ fontSize: 58, marginBottom: 12 }}>{v.emoji}</div>
+            <div style={{ fontSize: 20, fontWeight: 900, color: 'var(--w4-text)', marginBottom: 6 }}>
+              {categoryLabel || 'מקום עבודה'}
+            </div>
+            <div style={{ fontSize: 14.5, lineHeight: 1.55, maxWidth: 420 }}>
+              אין תמונה זמינה למקום זה כרגע.
+              {isAdmin ? ' ניתן להוסיף תמונות אמיתיות דרך פאנל המנהל.' : ''}
+            </div>
+          </div>
         </div>
-        <div style={{ borderRadius: 'var(--w4-radius)', overflow: 'hidden' }}>
-          <Photo color={tiles[2].color} h={155} label={tiles[2].label} src={tiles[2].src} />
-        </div>
-        <div style={{ gridColumn: 'span 2', borderRadius: 'var(--w4-radius)', overflow: 'hidden' }}>
-          <Photo color={tiles[3].color} h={155} label={tiles[3].label} src={tiles[3].src} />
-        </div>
-      </div>
+      )}
 
       <div
         className="w4-venue-cols"
@@ -210,8 +302,96 @@ export function Venue({ venueId, go, location, openRating }: VenueProps) {
             <div style={{ height: 1, background: 'var(--w4-border)' }} />
             <SpecRow icon="shekel" label="מחירים" value={v.priceLabel} />
           </div>
+          {hasContactInfo && (
+            <div
+              style={{
+                background: 'var(--w4-surface)',
+                borderRadius: 'var(--w4-radius)',
+                padding: '18px',
+                boxShadow: 'var(--w4-shadow-sm)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                <Icon name="pin" size={18} style={{ color: 'var(--w4-accent)' }} />
+                <span style={{ fontSize: 16, fontWeight: 800 }}>יצירת קשר ותנאי כניסה</span>
+              </div>
+
+              {categoryLabel && (
+                <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 8, color: 'var(--w4-accent)' }}>
+                  {categoryLabel}
+                </div>
+              )}
+
+              {accessNote && (
+                <div style={{ fontSize: 13.5, lineHeight: 1.55, color: 'var(--w4-muted)', marginBottom: 12 }}>
+                  {accessNote}
+                </div>
+              )}
+
+              {contactNote && (
+                <div style={{ fontSize: 13.5, lineHeight: 1.55, color: 'var(--w4-muted)', marginBottom: 12 }}>
+                  {contactNote}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {website && (
+                  <Button variant="soft" icon="pin" onClick={openWebsite}>
+                    אתר המקום
+                  </Button>
+                )}
+
+                {phone ? (
+                  <a
+                    href={`tel:${phone}`}
+                    style={{
+                      textDecoration: 'none',
+                      color: 'var(--w4-text)',
+                      fontSize: 14,
+                      fontWeight: 700,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                    }}
+                  >
+                    <Icon name="pin" size={15} style={{ color: 'var(--w4-accent)' }} />
+                    טלפון: {phone}
+                  </a>
+                ) : (
+                  <div
+                    style={{
+                      background: 'var(--w4-surface-2)',
+                      borderRadius: 'var(--w4-radius-sm)',
+                      padding: '10px 12px',
+                      fontSize: 13.5,
+                      lineHeight: 1.5,
+                      color: 'var(--w4-muted)',
+                      fontWeight: 600,
+                    }}
+                  >
+                    מספר טלפון לא זמין במקור הנתונים. מומלץ לבדוק באתר המקום או להשתמש בניווט.
+                  </div>
+                )}
+
+                {email && (
+                  <a
+                    href={`mailto:${email}`}
+                    style={{
+                      textDecoration: 'none',
+                      color: 'var(--w4-text)',
+                      fontSize: 14,
+                      fontWeight: 700,
+                    }}
+                  >
+                    אימייל: {email}
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
+
           <div style={{ display: 'flex', gap: 10 }}>
-            <Button variant="soft" icon="star" onClick={() => openRating({ id: v.id, name: v.name })}>
+            <Button variant="soft" icon="star" onClick={() => openRating({ id: v.id, name: v.name, placeType: (v as any).placeType })}>
               דרג
             </Button>
             <Button full icon="pin" onClick={navigate}>
