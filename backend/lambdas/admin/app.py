@@ -178,9 +178,10 @@ def update_venue(event, venue_id):
         "updatedAt": datetime.now(timezone.utc).isoformat()
     }
 
+    # Only operational/editable fields are allowed here.
+    # Identity fields such as name, address, latitude, longitude, placeType and source
+    # are intentionally not editable from the admin panel.
     allowed_fields = [
-        "name",
-        "address",
         "openingHours",
         "priceRange",
         "wifiQuality",
@@ -188,6 +189,7 @@ def update_venue(event, venue_id):
         "hasPowerOutlets",
         "description",
         "imageUrls",
+        "mainImageUrl",
         "categoryLabel",
         "accessNote",
         "contactNote",
@@ -201,11 +203,8 @@ def update_venue(event, venue_id):
         if field in data:
             updated_venue[field] = data[field]
 
-    if "latitude" in data:
-        updated_venue["latitude"] = to_decimal(data["latitude"])
-
-    if "longitude" in data:
-        updated_venue["longitude"] = to_decimal(data["longitude"])
+    if "imageUrls" in data and data.get("imageUrls"):
+        updated_venue["mainImageUrl"] = data["imageUrls"][0]
 
     venues_table.put_item(Item=updated_venue)
 

@@ -23,6 +23,7 @@ interface HomeProps {
   location: LatLng;
   searchLocationId: string;
   setSearchLocationId: (id: string) => void;
+  openAdminVenues: () => void;
 }
 
 type BoolFilterKey = 'quiet' | 'power' | 'wifi' | 'open';

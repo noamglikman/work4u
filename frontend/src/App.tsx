@@ -18,6 +18,7 @@ import { PushCard } from './components/PushCard';
 import { AppearanceSettings } from './components/AppearanceSettings';
 import { ForgotDialog } from './components/dialogs/ForgotDialog';
 import { AdminDialog } from './components/dialogs/AdminDialog';
+import { AdminVenuesDialog } from './components/dialogs/AdminVenuesDialog';
 import { RatingModal } from './components/dialogs/RatingModal';
 
 import { Login } from './screens/Login';
@@ -34,6 +35,7 @@ type RatingTarget = { id: string; name: string; placeType?: string } | null;
 const isAuthScreen = (s: Screen) => s === 'login' || s === 'signup';
 
 export default function App() {
+  const [showAdminVenues, setShowAdminVenues] = useState(false);
   const { isAuthenticated, isAdmin, loading: authLoading } = useAuth();
   const { tweaks } = useTheme();
   const { location } = useGeolocation();
@@ -177,6 +179,7 @@ export default function App() {
         location={effectiveLocation}
         searchLocationId={searchLocationId}
         setSearchLocationId={setSearchLocationId}
+        openAdminVenues={() => setShowAdminVenues(true)}
       />
     );
   } else if (effective === 'venue' && selectedVenueId) {
@@ -216,7 +219,13 @@ export default function App() {
           content
         ) : (
           <>
-            <Header screen={effective} go={go} isAdmin={isAdmin} openAdmin={() => setOverlay('admin')} />
+            <Header
+              screen={effective}
+              go={go}
+              isAdmin={isAdmin}
+              openAdmin={() => setOverlay('admin')}
+              openAdminVenues={() => setShowAdminVenues(true)}
+            />
             <main style={{ flex: 1, overflowY: fillHeight ? 'hidden' : 'auto' }}>{content}</main>
           </>
         )}
@@ -240,6 +249,12 @@ export default function App() {
       </div>
 
       {!isAuth && <AppearanceSettings />}
-    </>
+      {showAdminVenues && (
+        <AdminVenuesDialog
+          close={() => setShowAdminVenues(false)}
+          onChanged={reloadVenues}
+        />
+      )}
+</>
   );
 }

@@ -83,3 +83,11 @@ frontend/.env
 
 # Temporary/editor files
 *.save
+
+# local/dev files
+.venv/
+.aws-sam/
+frontend/dist/
+frontend/.env
+.env
+*.tsbuildinfo

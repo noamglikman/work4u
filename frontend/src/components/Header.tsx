@@ -9,6 +9,7 @@ interface HeaderProps {
   go: Navigate;
   isAdmin: boolean;
   openAdmin: () => void;
+  openAdminVenues: () => void;
 }
 
 function avatarInitial(email: string | undefined): string {
@@ -16,7 +17,8 @@ function avatarInitial(email: string | undefined): string {
   return ch ? ch.toUpperCase() : 'נ';
 }
 
-export function Header({ screen, go, isAdmin, openAdmin }: HeaderProps) {
+export function Header({ screen, go, isAdmin, openAdmin,
+  openAdminVenues }: HeaderProps) {
   const { session } = useAuth();
 
   const Item = ({ to, icon, label }: { to: Screen; icon: IconName; label: string }) => {
@@ -135,6 +137,23 @@ export function Header({ screen, go, isAdmin, openAdmin }: HeaderProps) {
       >
         {avatarInitial(session?.user.email)}
       </button>
+          <button
+            onClick={openAdminVenues}
+            style={{
+              border: 'none',
+              borderRadius: 999,
+              padding: '10px 16px',
+              background: 'var(--w4-surface-2)',
+              color: 'var(--w4-text)',
+              fontFamily: 'inherit',
+              fontSize: 14,
+              fontWeight: 800,
+              cursor: 'pointer',
+              boxShadow: 'var(--w4-shadow-sm)',
+            }}
+          >
+            ניהול מקומות
+          </button>
     </header>
   );
 }

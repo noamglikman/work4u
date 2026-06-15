@@ -256,6 +256,11 @@ Resources:
       FunctionName: Work4U-AdminFunction
       CodeUri: ../backend/
       Handler: lambdas.admin.app.lambda_handler
+      Policies:
+        - S3CrudPolicy:
+            BucketName: !Ref VenueImagesBucket
+        - DynamoDBCrudPolicy:
+            TableName: !Ref VenuesTable
       Events:
         CreateVenue:
           Type: Api
