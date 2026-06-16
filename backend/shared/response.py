@@ -1,3 +1,4 @@
+import base64
 import json
 from decimal import Decimal
 
@@ -19,13 +20,30 @@ CORS_HEADERS = {
 }
 
 
-def success_response(data=None, status_code=200):
+def parse_json_body(event):
+    body = event.get("body")
+
+    if not body:
+        return {}
+
+    if event.get("isBase64Encoded"):
+        body = base64.b64decode(body).decode("utf-8")
+
+    if isinstance(body, dict):
+        return body
+
+    return json.loads(body)
+
+
+def success_response(message="OK", data=None, status_code=200):
     return {
         "statusCode": status_code,
         "headers": CORS_HEADERS,
         "body": json.dumps(
             {
+                "success": True,
                 "ok": True,
+                "message": message,
                 "data": data,
             },
             ensure_ascii=False,
@@ -34,10 +52,12 @@ def success_response(data=None, status_code=200):
     }
 
 
-def error_response(message="Something went wrong", status_code=400, details=None):
+def error_response(message="Something went wrong", error_code="SERVER_ERROR", status_code=400, details=None):
     body = {
+        "success": False,
         "ok": False,
         "message": message,
+        "errorCode": error_code,
     }
 
     if details is not None:

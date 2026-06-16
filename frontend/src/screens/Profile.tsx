@@ -32,27 +32,11 @@ export function Profile({ go }: { go: Navigate }) {
   const initial = (email?.trim()[0] ?? 'W').toUpperCase();
 
     const reportsCount = ratings.length;
-
-  // There is currently no real favorites feature/table in the project,
-  // so the real value is 0 until we implement saved venues.
-  const favoritesCount = 0;
-
-  const activePreferencesCount = preferences
-    ? [
-        preferences.quietEnvironment,
-        preferences.needPowerOutlet,
-        preferences.wifiQuality === 'high',
-        Boolean(preferences.priceRange),
-      ].filter(Boolean).length
-    : 0;
-
-  // Real activity score based on actual user data we already have.
-  const pointsCount = reportsCount * 40 + favoritesCount * 20 + activePreferencesCount * 10;
+  const favoritesCount = preferences?.favoriteVenueIds?.length ?? 0;
 
   const profileStats = [
     ['דיווחים', reportsCount],
     ['מועדפים', favoritesCount],
-    ['נקודות', pointsCount],
   ] as const;
 
   const onLogout = async () => {

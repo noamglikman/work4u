@@ -12,11 +12,13 @@ export function usePreferences() {
   const save = useCallback(async (input: UserPreferencesInput): Promise<UserPreferences> => {
     setSaving(true);
     try {
-      return await api.preferences.save(input);
+      const saved = await api.preferences.save(input);
+      await state.reload();
+      return saved;
     } finally {
       setSaving(false);
     }
-  }, []);
+  }, [state]);
 
   return {
     preferences: state.data,

@@ -1,15 +1,16 @@
 // screens/Home.tsx — map + recommendations sidebar (ported from WebHome).
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { VenuePreview } from '../types/view';
 import { DEFAULT_FILTERS, type Filters } from '../lib/filters';
-import type { PriceRangeFilter } from '../types/api';
+import type { PriceRangeFilter, UserPreferencesInput } from '../types/api';
 import type { LatLng } from '../lib/geo';
 import { PRICE_FILTER_LABEL } from '../lib/labels';
 import { SEARCH_LOCATIONS } from '../lib/searchLocations';
 import { Icon, OccPill, Photo, Tag, type IconName } from '../components/ui';
 import { MapCanvas } from '../components/MapCanvas';
 import { VenueListCard } from '../components/VenueListCard';
+import { usePreferences } from '../hooks/usePreferences';
 
 interface HomeProps {
   openVenue: (id: string) => void;
@@ -52,8 +53,37 @@ export function Home({
 }: HomeProps) {
   const [selected, setSelected] = useState<string | null>(null);
   const [showAdv, setShowAdv] = useState(false);
+  const { preferences, save: savePreferences } = usePreferences();
+
+  const favoriteVenueIds = useMemo(
+    () => preferences?.favoriteVenueIds ?? [],
+    [preferences?.favoriteVenueIds],
+  );
+
   const setF = <K extends keyof Filters>(k: K, v: Filters[K]) =>
     setFilters((f) => ({ ...f, [k]: v }));
+
+  const toggleFavorite = async (venueId: string) => {
+    const current = preferences;
+    const currentFavorites = current?.favoriteVenueIds ?? [];
+    const isAlreadyFavorite = currentFavorites.includes(venueId);
+
+    const nextFavorites = isAlreadyFavorite
+      ? currentFavorites.filter((id) => id !== venueId)
+      : [...currentFavorites, venueId];
+
+    const input: UserPreferencesInput = {
+      quietEnvironment: current?.quietEnvironment ?? false,
+      needPowerOutlet: current?.needPowerOutlet ?? false,
+      wifiQuality: current?.wifiQuality ?? 'medium',
+      preferredSeatType: current?.preferredSeatType ?? 'any',
+      priceRange: current?.priceRange ?? 'medium',
+      favoriteVenueIds: nextFavorites,
+    };
+
+    await savePreferences(input);
+  };
+
   const sel = venues.find((v) => v.id === selected);
 
   return (
@@ -243,6 +273,8 @@ export function Home({
                   key={v.id}
                   v={v}
                   active={selected === v.id}
+                  isFavorite={favoriteVenueIds.includes(v.id)}
+                  onToggleFavorite={toggleFavorite}
                   onClick={() => openVenue(v.id)}
                 />
               ))}

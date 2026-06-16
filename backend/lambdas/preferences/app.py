@@ -71,6 +71,9 @@ def get_preferences(event):
             data=None
         )
 
+    # Backward compatibility for users who saved preferences before favorites existed.
+    preferences.setdefault("favoriteVenueIds", [])
+
     return success_response(
         message="Preferences loaded successfully",
         data=preferences
@@ -96,6 +99,7 @@ def save_preferences(event):
         "wifiQuality": data["wifiQuality"],
         "preferredSeatType": data["preferredSeatType"],
         "priceRange": data["priceRange"],
+        "favoriteVenueIds": clean_favorite_venue_ids(data.get("favoriteVenueIds", [])),
         "updatedAt": datetime.now(timezone.utc).isoformat()
     }
 
@@ -105,6 +109,31 @@ def save_preferences(event):
         message="Preferences saved successfully",
         data=item
     )
+
+
+def clean_favorite_venue_ids(value):
+    if value is None:
+        return []
+
+    if not isinstance(value, list):
+        return []
+
+    cleaned = []
+
+    for venue_id in value:
+        if not isinstance(venue_id, str):
+            continue
+
+        venue_id = venue_id.strip()
+
+        if not venue_id:
+            continue
+
+        if venue_id not in cleaned:
+            cleaned.append(venue_id)
+
+    # Prevent a single user preferences item from growing too much.
+    return cleaned[:100]
 
 
 def validate_preferences(data):
@@ -155,6 +184,13 @@ def validate_preferences(data):
     if data["priceRange"] not in VALID_PRICE_RANGES:
         return error_response(
             message="priceRange must be one of: low, medium, high, any",
+            error_code="VALIDATION_ERROR",
+            status_code=400
+        )
+
+    if "favoriteVenueIds" in data and not isinstance(data["favoriteVenueIds"], list):
+        return error_response(
+            message="favoriteVenueIds must be a list",
             error_code="VALIDATION_ERROR",
             status_code=400
         )

@@ -54,6 +54,7 @@ export interface UserPreferences {
   wifiQuality: WifiQuality;
   preferredSeatType: SeatType;
   priceRange: PriceRange;
+  favoriteVenueIds?: string[];
   updatedAt?: string;
 }
 
