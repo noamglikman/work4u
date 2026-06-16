@@ -1,76 +1,83 @@
-# Work4U — הסבר מערכת לצוות
+# Work4U — Project Overview for the Team
 
-מטרת המסמך הזה היא להסביר בצורה ברורה איך פרויקט Work4U עובד מקצה לקצה: מה המשתמש רואה, איך הפרונט מחובר ל־AWS, איך הנתונים עוברים בין React, API Gateway, Lambda ו־DynamoDB, ואיך מבצעים build ו־deploy.
-
----
-
-## 1. מה זה Work4U?
-
-Work4U היא אפליקציית Web שעוזרת למשתמשים למצוא מקום מתאים לעבוד או ללמוד ממנו.
-
-במקום לחפש רק “בית קפה קרוב”, המערכת מנסה למצוא מקום שמתאים לעבודה לפי תנאים כמו:
-
-* מיקום נוכחי או מיקום ידני
-* מרחק מהמקום
-* איכות Wi-Fi
-* רמת רעש
-* זמינות שקעי חשמל
-* מחיר / מחיר קפה ממוצע
-* שעות פעילות
-* דירוגים ופידבק ממשתמשים
+This document explains how the Work4U project works from end to end: what the user sees, how the React frontend connects to AWS, how data flows through API Gateway, Lambda and DynamoDB, and how we deploy changes.
 
 ---
 
-## 2. הארכיטקטורה הכללית
+## 1. What is Work4U?
 
-המערכת בנויה כ־Serverless Web Application על AWS.
+Work4U is a web application that helps users find a suitable place to work or study.
 
-הזרימה הכללית:
+Instead of only searching for a nearby cafe, the system tries to answer a more useful question:
+
+> Where is the best place for me to work right now, based on my location and work preferences?
+
+The system considers:
+
+* Current location or manually selected location
+* Distance from the user
+* Wi-Fi quality
+* Noise level
+* Power outlet availability
+* Price range / estimated coffee price
+* Opening hours
+* Venue type
+* Ratings and user feedback
+
+---
+
+## 2. High-Level Architecture
+
+Work4U is built as a serverless web application on AWS.
+
+General flow:
 
 User Browser
 ↓
 CloudFront HTTPS
 ↓
-S3 bucket שמחזיק את קבצי React
+S3 bucket with the React frontend files
 ↓
-React App בדפדפן
+React application running in the browser
 ↓
 API Gateway
 ↓
-Lambda Functions
+Lambda functions
 ↓
 DynamoDB
 
-רכיבים נוספים:
+Additional services:
 
-* Cognito — התחברות והרשאות
-* S3 Images Bucket — שמירת תמונות של מקומות
-* CloudFront — HTTPS ו־CDN
-* DynamoDB — שמירת מקומות, דירוגים, העדפות ולמידת משתמש
+* Cognito — authentication and authorization
+* S3 Images Bucket — venue images
+* CloudFront — HTTPS and CDN
+* DynamoDB — venues, ratings, preferences and user learning data
 
-אין בפרויקט שרת EC2 שאנחנו מנהלות ידנית. רוב הרכיבים הם שירותים מנוהלים של AWS.
+There is no EC2 server that we manage manually. Most of the system uses managed AWS services.
 
 ---
 
-## 3. רכיבי AWS המרכזיים
+## 3. Main AWS Components
 
-### S3 — אחסון הפרונט
+### S3 — Frontend Hosting
 
-ה־frontend נבנה לקבצים סטטיים ונשמר ב־S3 bucket:
+The frontend is built into static files and uploaded to the S3 frontend bucket:
 
 work4u-frontend-prod-005311909587-us-east-1
 
 ### CloudFront — HTTPS
 
-CloudFront יושב מעל S3 ומגיש את האתר ב־HTTPS:
+CloudFront sits in front of the S3 website and serves the app over HTTPS:
 
 https://d2naweiqyo4hkm.cloudfront.net
 
-זה חשוב כי פיצ׳רים כמו “מיקום נוכחי” דורשים אתר מאובטח.
+This is important because browser features such as current location require HTTPS.
 
 ### API Gateway
 
-API Gateway הוא שער הכניסה ל־backend. הפרונט שולח אליו בקשות כמו:
+API Gateway is the entry point to the backend.
+
+The frontend sends requests such as:
 
 * GET /venues
 * GET /venues/{venueId}
@@ -80,11 +87,11 @@ API Gateway הוא שער הכניסה ל־backend. הפרונט שולח אלי
 
 ### Lambda
 
-כל פעולה ב־backend רצה כ־Lambda function. אין שרת backend שרץ תמיד.
+Each backend action runs as a Lambda function. There is no always-running backend server.
 
 ### DynamoDB
 
-הנתונים נשמרים בטבלאות:
+The main tables are:
 
 * Work4U_Venues
 * Work4U_Ratings
@@ -93,58 +100,98 @@ API Gateway הוא שער הכניסה ל־backend. הפרונט שולח אלי
 
 ### Cognito
 
-Cognito מנהל משתמשים, התחברות והרשאות. אחרי login המשתמש מקבל token, והפרונט שולח אותו ל־API בבקשות מוגנות.
+Cognito manages users, login and permissions. After login, the user receives a token, and the frontend sends this token to the API in protected requests.
 
 ---
 
-## 4. מבנה הפרויקט
+## 4. Project Structure
 
 work4u/
 
 * frontend/ — React + Vite frontend
-* backend/ — קוד ה־Lambda
-* infrastructure/ — תשתית AWS ב־SAM / CloudFormation
-* scripts/ — סקריפטים לעדכון דאטה
-* docs/ — תיעוד
-* backups/ — גיבויים מקומיים, לא מעלים לגיט
-* .aws-sam/ — תוצרי build של SAM
+* backend/ — Lambda source code
+* infrastructure/ — AWS SAM / CloudFormation templates
+* scripts/ — scripts for importing and updating data
+* docs/ — project documentation
+* backups/ — local backups, not pushed to Git
+* .aws-sam/ — SAM build output
 
 ---
 
-## 5. קבצי frontend חשובים
+## 5. Important Frontend Files
 
-* frontend/src/App.tsx — הקובץ המרכזי שמנהל מסכים, פילטרים, מיקום וטעינת מקומות
-* frontend/src/screens/Home.tsx — מסך הבית
-* frontend/src/screens/Venue.tsx — עמוד פרטי מקום
-* frontend/src/components/VenueListCard.tsx — כרטיס מקום ברשימה
-* frontend/src/components/MapCanvas.tsx — המפה הגרפית
-* frontend/src/components/dialogs/AdminVenuesDialog.tsx — פאנל ניהול מקומות
-* frontend/src/hooks/useVenues.ts — טעינת מקומות מה־API
-* frontend/src/hooks/useGeolocation.ts — מיקום נוכחי
-* frontend/src/lib/filters.ts — בניית query לפי פילטרים
-* frontend/src/lib/mappers.ts — המרת נתוני API לנתוני תצוגה
-* frontend/src/lib/geo.ts — מרחקים וקואורדינטות
-* frontend/src/api/http.ts — קריאות HTTP
-* frontend/src/api/live.ts — פעולות API נוחות
-* frontend/src/config/env.ts — קריאת משתני סביבה
+* frontend/src/App.tsx
+  The main controller of the frontend. It manages screens, filters, location, selected venue and dialogs.
+
+* frontend/src/screens/Home.tsx
+  The home screen. It displays the venue list, filters and map.
+
+* frontend/src/screens/Venue.tsx
+  The venue details page.
+
+* frontend/src/components/VenueListCard.tsx
+  Displays a single venue card in the list.
+
+* frontend/src/components/MapCanvas.tsx
+  Displays the custom map and venue pins.
+
+* frontend/src/components/dialogs/AdminVenuesDialog.tsx
+  Admin panel for managing venues.
+
+* frontend/src/hooks/useVenues.ts
+  Loads venues from the API.
+
+* frontend/src/hooks/useGeolocation.ts
+  Handles current location using the browser geolocation API.
+
+* frontend/src/lib/filters.ts
+  Converts UI filters into API query parameters.
+
+* frontend/src/lib/mappers.ts
+  Converts API objects into frontend view models.
+
+* frontend/src/lib/geo.ts
+  Handles coordinates, distance calculations and map projection.
+
+* frontend/src/api/http.ts
+  Sends HTTP requests to the backend.
+
+* frontend/src/api/live.ts
+  Defines the live API functions used by the app.
+
+* frontend/src/config/env.ts
+  Reads environment variables such as API URL and Cognito IDs.
 
 ---
 
-## 6. קבצי backend חשובים
+## 6. Important Backend Files
 
-* backend/lambdas/venues/app.py — מקומות
-* backend/lambdas/admin/app.py — פעולות מנהל
-* backend/lambdas/ratings/app.py — דירוגים
-* backend/lambdas/preferences/app.py — העדפות משתמש
-* backend/lambdas/learning/app.py — למידת התנהגות בסיסית
-* backend/shared/response.py — תשובות JSON ו־CORS
-* backend/shared/auth.py — עזרי Authentication והרשאות
+* backend/lambdas/venues/app.py
+  Handles venue listing and venue details.
+
+* backend/lambdas/admin/app.py
+  Handles admin actions such as creating, updating and deleting venues.
+
+* backend/lambdas/ratings/app.py
+  Handles user ratings.
+
+* backend/lambdas/preferences/app.py
+  Handles user preferences.
+
+* backend/lambdas/learning/app.py
+  Handles basic user behavior learning.
+
+* backend/shared/response.py
+  Builds JSON responses and adds CORS headers.
+
+* backend/shared/auth.py
+  Contains authentication and authorization helper logic.
 
 ---
 
-## 7. איך נטענים מקומות באתר?
+## 7. How Venues Are Loaded
 
-הזרימה:
+When the user opens the home screen, the flow is:
 
 App.tsx
 ↓
@@ -160,7 +207,7 @@ API Gateway
 ↓
 Venues Lambda
 ↓
-DynamoDB Work4U_Venues
+DynamoDB table: Work4U_Venues
 ↓
 JSON response
 ↓
@@ -168,111 +215,121 @@ toVenuePreview
 ↓
 Home + VenueListCard + MapCanvas
 
-כלומר React לא קורא ישירות ל־DynamoDB. הוא תמיד עובר דרך API Gateway ו־Lambda.
+React never reads directly from DynamoDB. It always goes through API Gateway and Lambda.
 
 ---
 
-## 8. איך עובד מיקום נוכחי?
+## 8. How Current Location Works
 
-הקובץ המרכזי:
+The main file is:
 
 frontend/src/hooks/useGeolocation.ts
 
-הוא משתמש ב־browser API:
+It uses the browser API:
 
 navigator.geolocation.getCurrentPosition
 
-בעיה שהייתה:
-האתר היה על HTTP ולכן הדפדפן חסם מיקום. בנוסף, אם המיקום נכשל, המערכת נשארה על ברירת מחדל של תל אביב.
+Before the HTTPS change, the site was served through HTTP, so the browser could block current location. Also, when location failed, the app could silently fall back to the default location, which was Tel Aviv.
 
-התיקון:
-העברנו את האתר ל־HTTPS דרך CloudFront, ושיפרנו את ההתנהגות כך שלא יוצגו תוצאות מתל אביב כאילו זה המיקום הנוכחי.
+After the fix:
+
+* The site is served through CloudFront HTTPS.
+* The browser can allow geolocation.
+* The app does not silently show Tel Aviv results as if they were the user's real current location.
+* The user can also choose a manual location.
 
 ---
 
-## 9. איך עובד פאנל ניהול מקומות?
+## 9. How the Admin Venue Panel Works
 
-הקובץ המרכזי:
+The main file is:
 
 frontend/src/components/dialogs/AdminVenuesDialog.tsx
 
-הפאנל מאפשר למנהל:
+The admin panel allows an admin to:
 
-* לראות רשימת מקומות
-* לחפש מקום
-* לערוך Wi-Fi, רעש, שקעים, מחיר, שעות ותיאור
-* להוסיף אתר, טלפון ואימייל
-* להוסיף תמונות
-* להסיר תמונות מהתצוגה
-* למחוק מקום מהתצוגה
+* View all venues
+* Search venues
+* Edit Wi-Fi quality
+* Edit noise level
+* Edit power outlet availability
+* Edit price range and coffee price display
+* Edit opening hours
+* Edit description
+* Add website, phone and email
+* Add venue images
+* Remove images from display
+* Remove a venue from user-facing results
 
-העדכון נשלח ל־Admin Lambda, ומשם נשמר ב־DynamoDB.
+The update is sent to the Admin Lambda, and the Admin Lambda updates DynamoDB.
 
 ---
 
-## 10. איך תמונות עובדות?
+## 10. How Images Work
 
-התמונות נשמרות ב־S3 bucket נפרד:
+Venue images are stored in a separate S3 bucket:
 
 work4u-venue-images-005311909587-us-east-1
 
-הזרימה:
+Image upload flow:
 
 Admin selects image
 ↓
-Frontend asks backend for upload URL
+Frontend asks backend for an upload URL
 ↓
-Admin Lambda creates presigned URL
+Admin Lambda creates a presigned URL
 ↓
-Frontend uploads image directly to S3
+Frontend uploads the image directly to S3
 ↓
-Frontend saves image URL in DynamoDB
+Frontend saves the image URL in DynamoDB
 ↓
-Frontend displays image
+Frontend displays the image
 
-מחיקת תמונה מהתצוגה מסירה את ה־URL מתוך imageUrls. זה לא בהכרח מוחק פיזית את הקובץ מ־S3.
+Removing an image from the admin panel removes the image URL from `imageUrls`. This removes it from the website display, but it does not necessarily delete the physical file from S3.
 
 ---
 
-## 11. מחיר קפה ממוצע
+## 11. Estimated Coffee Price
 
-הוספנו סקריפט:
+We added a script:
 
 scripts/update_coffee_prices.py
 
-המטרה הייתה למנוע מצב שכל המקומות מציגים אותו מחיר קפה.
+The goal was to avoid showing the same coffee price for all venues.
 
-הסקריפט מחשב מחיר לפי:
+The script estimates a coffee price based on:
 
-* אזור בארץ
-* סוג מקום
-* מזהה מקום
+* Region in Israel
+* Venue type
+* Venue ID
 
-השדות שנוספו ל־DynamoDB:
+The fields added to DynamoDB are:
 
 * averageCoffeePrice
 * coffeePriceSource
 * coffeePriceUpdatedAt
 * priceRange
 
-הפרונט מציג מחיר לפי averageCoffeePrice אם הוא קיים.
+The frontend displays `averageCoffeePrice` when it exists. If it does not exist, the frontend falls back to the older price range label.
 
 ---
 
-## 12. איך עושים build לפרונט?
+## 12. Frontend Build
 
-מתיקיית הפרונט:
+To build the frontend:
 
 cd ~/projects/work4u/frontend
 npm run build
 
-התוצר נוצר בתיקייה:
+The build output is created in:
 
 frontend/dist
 
 ---
 
-## 13. איך מעלים frontend ל־S3 ו־CloudFront?
+## 13. Deploying the Frontend to S3 and CloudFront
+
+From the frontend folder:
 
 cd ~/projects/work4u/frontend
 
@@ -282,9 +339,13 @@ aws s3 cp ./dist/index.html s3://work4u-frontend-prod-005311909587-us-east-1/ind
 
 aws cloudfront create-invalidation --distribution-id E11QEQKPML3717 --paths "/*"
 
+The CloudFront invalidation is important because CloudFront may continue serving cached files.
+
 ---
 
-## 14. איך עושים build ל־backend?
+## 14. Backend Build
+
+From the project root:
 
 cd ~/projects/work4u
 
@@ -292,7 +353,9 @@ sam build --template-file infrastructure/template.yaml
 
 ---
 
-## 15. איך עושים deploy ל־backend?
+## 15. Backend Deploy
+
+From the project root:
 
 cd ~/projects/work4u
 
@@ -300,25 +363,25 @@ sam deploy --template-file .aws-sam/build/template.yaml --stack-name work4u-dev 
 
 ---
 
-## 16. בדיקות שימושיות
+## 16. Useful Checks
 
-בדיקת זהות AWS:
+Check AWS identity:
 
 aws sts get-caller-identity
 
-בדיקת טבלאות:
+List DynamoDB tables:
 
 aws dynamodb list-tables
 
-בדיקת CloudFront:
+Check CloudFront distribution:
 
 aws cloudfront get-distribution --id E11QEQKPML3717 --query "Distribution.{DomainName:DomainName,Status:Status}" --output table
 
-בדיקת HTTPS בדפדפן:
+Check HTTPS in the browser console:
 
 window.isSecureContext
 
-בדיקת מיקום בדפדפן:
+Check geolocation in the browser console:
 
 navigator.geolocation.getCurrentPosition(
 p => console.log(p.coords.latitude, p.coords.longitude),
@@ -327,18 +390,22 @@ e => console.error(e)
 
 ---
 
-## 17. משפט הסבר קצר לפרויקט
+## 17. Short Project Explanation
 
-Work4U היא אפליקציית Serverless למציאת מקום מתאים לעבודה או למידה לפי מיקום, העדפות ותנאי עבודה כמו Wi-Fi, שקט, שקעים ומחיר. הפרונט כתוב ב־React ומוגש דרך S3 ו־CloudFront HTTPS, הבקשות עוברות דרך API Gateway ל־Lambda, והנתונים נשמרים ב־DynamoDB עם Cognito לניהול משתמשים והרשאות.
+Work4U is a serverless web application for finding a suitable place to work or study based on location, user preferences and work conditions such as Wi-Fi, quietness, power outlets and price.
+
+The frontend is written in React and served through S3 and CloudFront HTTPS. Requests go through API Gateway to Lambda functions. Data is stored in DynamoDB, images are stored in S3, and Cognito manages authentication and authorization.
 
 ---
 
-## 18. דברים לשיפור בהמשך
+## 18. Future Improvements
 
-* חיבור ל־Google Places
-* דומיין אישי
-* Dashboard למנהל
-* מחיקה פיזית של תמונות מ־S3
-* המלצות חכמות יותר
-* בדיקות אוטומטיות
-* שיפור UX כשאין מקומות בטווח
+Possible improvements:
+
+* Connect to Google Places
+* Add a custom domain
+* Build a manager dashboard
+* Physically delete removed images from S3
+* Improve personalized recommendations
+* Add automated tests
+* Improve the empty-state UX when no venues are found nearby
