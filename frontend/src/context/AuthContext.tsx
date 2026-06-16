@@ -23,6 +23,7 @@ interface AuthContextValue {
   signUp: (email: string, password: string) => Promise<SignUpResult>;
   confirmSignUp: (email: string, code: string) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
+  confirmResetPassword: (email: string, code: string, newPassword: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -70,6 +71,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const confirmResetPassword = useCallback(
+    (email: string, code: string, newPassword: string) =>
+      auth.confirmResetPassword(email, code, newPassword),
+    [],
+  );
+
   const signOut = useCallback(async () => {
     await auth.signOut();
     setSession(null);
@@ -85,9 +92,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signUp,
       confirmSignUp,
       resetPassword,
+      confirmResetPassword,
       signOut,
     }),
-    [session, loading, signIn, signUp, confirmSignUp, resetPassword, signOut],
+    [session, loading, signIn, signUp, confirmSignUp, resetPassword, confirmResetPassword, signOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
