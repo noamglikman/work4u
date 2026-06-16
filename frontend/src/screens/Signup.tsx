@@ -41,7 +41,7 @@ export function Signup({ go }: { go: Navigate }) {
     }
 
     if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(pw)) {
-      e.pw = 'שגיאה: הסיסמה חייבת להכיל הסיסמה חייבת לכלול לפחות 8 תווים, אות גדולה, אות קטנה ומספר';
+      e.pw = 'שגיאה: הסיסמה חייבת לכלול לפחות 8 תווים, אות גדולה, אות קטנה ומספר';
     }
 
     if (pw2 !== pw || !pw2) {
@@ -222,16 +222,28 @@ export function Signup({ go }: { go: Navigate }) {
             error={errs.email}
           />
 
-          <Field
-            label="סיסמה"
-            value={pw}
-            onChange={setPw}
-            type={showPw ? 'text' : 'password'}
-            placeholder="הסיסמה חייבת לכלול לפחות 8 תווים, אות גדולה, אות קטנה ומספר"
-            trailing={showPw ? 'eyeoff' : 'eye'}
-            onTrailing={() => setShowPw((s) => !s)}
-            error={errs.pw}
-          />
+          <div>
+            <Field
+              label="סיסמה"
+              value={pw}
+              onChange={setPw}
+              type={showPw ? 'text' : 'password'}
+              placeholder="הקלידו סיסמה"
+              trailing={showPw ? 'eyeoff' : 'eye'}
+              onTrailing={() => setShowPw((s) => !s)}
+              error={errs.pw}
+            />
+            <div
+              style={{
+                marginTop: 6,
+                fontSize: 12.5,
+                color: 'var(--w4-muted)',
+                lineHeight: 1.5,
+              }}
+            >
+              הסיסמה חייבת לכלול לפחות 8 תווים, אות גדולה, אות קטנה ומספר.
+            </div>
+          </div>
 
           <Field
             label="אימות סיסמה"
