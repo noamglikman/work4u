@@ -137,6 +137,7 @@ export function Header({ screen, go, isAdmin, openAdmin,
       >
         {avatarInitial(session?.user.email)}
       </button>
+          {isAdmin && (
           <button
             onClick={openAdminVenues}
             style={{
@@ -154,6 +155,7 @@ export function Header({ screen, go, isAdmin, openAdmin,
           >
             ניהול מקומות
           </button>
+        )}
     </header>
   );
 }

@@ -1,31 +1,77 @@
-// hooks/useGeolocation.ts — best-effort browser geolocation with a sensible
-// default (Tel Aviv) so distance + the map work even before/without permission.
-
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { DEFAULT_LOCATION, type LatLng } from '../lib/geo';
 
-export function useGeolocation(): { location: LatLng; precise: boolean } {
+export type GeoStatus =
+  | 'idle'
+  | 'loading'
+  | 'granted'
+  | 'denied'
+  | 'unavailable'
+  | 'insecure';
+
+export function useGeolocation(): {
+  location: LatLng;
+  precise: boolean;
+  status: GeoStatus;
+  error: string;
+  requestLocation: () => void;
+} {
   const [location, setLocation] = useState<LatLng>(DEFAULT_LOCATION);
   const [precise, setPrecise] = useState(false);
+  const [status, setStatus] = useState<GeoStatus>('idle');
+  const [error, setError] = useState('');
 
-  useEffect(() => {
-    if (!('geolocation' in navigator)) return;
-    let active = true;
+  const requestLocation = useCallback(() => {
+    setError('');
+
+    if (typeof window !== 'undefined' && !window.isSecureContext) {
+      setPrecise(false);
+      setStatus('insecure');
+      setError('מיקום נוכחי דורש אתר מאובטח ב־HTTPS. האתר הנוכחי רץ ב־HTTP ולכן הדפדפן חוסם מיקום.');
+      return;
+    }
+
+    if (!('geolocation' in navigator)) {
+      setPrecise(false);
+      setStatus('unavailable');
+      setError('הדפדפן לא תומך בקבלת מיקום נוכחי.');
+      return;
+    }
+
+    setStatus('loading');
+
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        if (!active) return;
-        setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setLocation({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+        });
         setPrecise(true);
+        setStatus('granted');
+        setError('');
       },
-      () => {
-        /* permission denied / unavailable → keep default */
+      (err) => {
+        setPrecise(false);
+
+        if (err.code === err.PERMISSION_DENIED) {
+          setStatus('denied');
+          setError('הרשאת המיקום נדחתה. כדי להשתמש במיקום נוכחי צריך לאשר הרשאת מיקום בדפדפן.');
+        } else {
+          setStatus('unavailable');
+          setError('לא הצלחנו לקבל מיקום נוכחי. נסי לרענן, לאשר הרשאה, או לבחור מיקום ידנית.');
+        }
       },
-      { enableHighAccuracy: false, timeout: 8000, maximumAge: 600000 },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 300000,
+      },
     );
-    return () => {
-      active = false;
-    };
   }, []);
 
-  return { location, precise };
+  useEffect(() => {
+    requestLocation();
+  }, [requestLocation]);
+
+  return { location, precise, status, error, requestLocation };
 }

@@ -2,66 +2,49 @@ import json
 from decimal import Decimal
 
 
-class DecimalEncoder(json.JSONEncoder):
-    """
-    Converts DynamoDB Decimal values into int or float
-    so they can be returned as valid JSON.
-    """
+def _json_default(value):
+    if isinstance(value, Decimal):
+        if value % 1 == 0:
+            return int(value)
+        return float(value)
 
-    def default(self, obj):
-        if isinstance(obj, Decimal):
-            if obj % 1 == 0:
-                return int(obj)
-            return float(obj)
-
-        return super(DecimalEncoder, self).default(obj)
+    raise TypeError(f"Object of type {type(value).__name__} is not JSON serializable")
 
 
 CORS_HEADERS = {
-    "Content-Type": "application/json",
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "Content-Type,Authorization",
-    "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS"
+    "Access-Control-Allow-Headers": "Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token",
+    "Access-Control-Allow-Methods": "OPTIONS,GET,POST,PUT,PATCH,DELETE",
+    "Access-Control-Max-Age": "86400",
 }
 
 
-def success_response(message, data=None, status_code=200):
+def success_response(data=None, status_code=200):
     return {
         "statusCode": status_code,
         "headers": CORS_HEADERS,
         "body": json.dumps(
             {
-                "success": True,
-                "message": message,
-                "data": data if data is not None else {}
+                "ok": True,
+                "data": data,
             },
-            cls=DecimalEncoder
-        )
+            ensure_ascii=False,
+            default=_json_default,
+        ),
     }
 
 
-def error_response(message, error_code="SERVER_ERROR", status_code=500):
+def error_response(message="Something went wrong", status_code=400, details=None):
+    body = {
+        "ok": False,
+        "message": message,
+    }
+
+    if details is not None:
+        body["details"] = details
+
     return {
         "statusCode": status_code,
         "headers": CORS_HEADERS,
-        "body": json.dumps(
-            {
-                "success": False,
-                "message": message,
-                "errorCode": error_code
-            },
-            cls=DecimalEncoder
-        )
+        "body": json.dumps(body, ensure_ascii=False, default=_json_default),
     }
-
-
-def parse_json_body(event):
-    body = event.get("body")
-
-    if not body:
-        return {}
-
-    if isinstance(body, dict):
-        return body
-
-    return json.loads(body)

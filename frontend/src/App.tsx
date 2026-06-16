@@ -38,7 +38,7 @@ export default function App() {
   const [showAdminVenues, setShowAdminVenues] = useState(false);
   const { isAuthenticated, isAdmin, loading: authLoading } = useAuth();
   const { tweaks } = useTheme();
-  const { location } = useGeolocation();
+  const { location, precise } = useGeolocation();
   const [searchLocationId, setSearchLocationId] = useState('current');
 
   const [screen, setScreen] = useState<Screen | null>(null);
@@ -76,10 +76,12 @@ export default function App() {
 
   // Home venue list — only fetched once authenticated.
   const query = useMemo(() => buildVenueQuery(filters, search, effectiveLocation), [filters, search, effectiveLocation]);
+  const currentLocationReady = searchLocationId !== 'current' || precise;
+
   const { venues, loading: venuesLoading, error: venuesError, reload: reloadVenues } = useVenues(
     query,
     effectiveLocation,
-    isAuthenticated,
+    isAuthenticated && currentLocationReady,
   );
 
   // Behavior learning: search terms.

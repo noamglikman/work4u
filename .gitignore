@@ -91,3 +91,6 @@ frontend/dist/
 frontend/.env
 .env
 *.tsbuildinfo
+
+# Local DynamoDB backups
+backups/

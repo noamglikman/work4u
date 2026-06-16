@@ -40,8 +40,8 @@ export function Signup({ go }: { go: Navigate }) {
       e.email = 'יש להזין כתובת אימייל תקינה';
     }
 
-    if (!/^(?=.*[A-Z])(?=.*\d).{8,}$/.test(pw)) {
-      e.pw = 'שגיאה: הסיסמה חייבת להכיל לפחות 8 תווים, אות גדולה ומספר';
+    if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(pw)) {
+      e.pw = 'שגיאה: הסיסמה חייבת להכיל לפחות 8 תווים, אות גדולה, אות קטנה ומספר';
     }
 
     if (pw2 !== pw || !pw2) {
@@ -227,7 +227,7 @@ export function Signup({ go }: { go: Navigate }) {
             value={pw}
             onChange={setPw}
             type={showPw ? 'text' : 'password'}
-            placeholder="לפחות 8 תווים, אות גדולה ומספר"
+            placeholder="לפחות 8 תווים, אות גדולה, אות קטנה ומספר"
             trailing={showPw ? 'eyeoff' : 'eye'}
             onTrailing={() => setShowPw((s) => !s)}
             error={errs.pw}

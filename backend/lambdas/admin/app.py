@@ -189,6 +189,7 @@ def update_venue(event, venue_id):
         "hasPowerOutlets",
         "description",
         "imageUrls",
+        "amenities",
         "mainImageUrl",
         "categoryLabel",
         "accessNote",
@@ -429,6 +430,13 @@ def validate_venue_payload(data, is_update=False):
     if "imageUrls" in data and not isinstance(data["imageUrls"], list):
         return error_response(
             message="imageUrls must be a list",
+            error_code="VALIDATION_ERROR",
+            status_code=400
+        )
+
+    if "amenities" in data and not isinstance(data["amenities"], list):
+        return error_response(
+            message="amenities must be a list",
             error_code="VALIDATION_ERROR",
             status_code=400
         )

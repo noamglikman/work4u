@@ -2,12 +2,12 @@
 // This is the seam that lets the SAME components render mock data and real
 // backend data identically: both go through these functions.
 
+import { getSmartPriceLabel } from './priceLabels';
 import type { Rating, VenueDetail, VenueSummary } from '../types/api';
 import type { ForecastBar, RatingView, VenuePreview, VenueView } from '../types/view';
 import {
   CROWD_HEIGHT,
   NOISE_LABEL,
-  PRICE_LABEL,
   WIFI_LABEL,
   WIFI_STARS,
   powerLabel,
@@ -52,7 +52,7 @@ export function toVenuePreview(v: VenueSummary, user?: LatLng): VenuePreview {
     distanceKm,
     distanceLabel: formatDistance(distanceKm),
     priceRange: v.priceRange,
-    priceLabel: PRICE_LABEL[v.priceRange],
+    priceLabel: getCoffeePriceLabel((v as any).averageCoffeePrice, v.priceRange, (v as any).placeType),
     wifiQuality: v.wifiQuality,
     wifiStars: WIFI_STARS[v.wifiQuality],
     noiseLevel: v.noiseLevel,
@@ -134,4 +134,24 @@ export function nowForecastIndex(forecast: ForecastBar[], hour: number): number 
     }
   });
   return best;
+}
+
+
+function getCoffeePriceLabel(
+  averageCoffeePrice: unknown,
+  priceRange?: string,
+  placeType?: string
+): string {
+  const numericPrice =
+    typeof averageCoffeePrice === 'number'
+      ? averageCoffeePrice
+      : typeof averageCoffeePrice === 'string'
+        ? Number(averageCoffeePrice)
+        : Number.NaN;
+
+  if (Number.isFinite(numericPrice) && numericPrice > 0) {
+    return `כוס קפה: כ־${Math.round(numericPrice)} ₪`;
+  }
+
+  return getSmartPriceLabel(priceRange, placeType);
 }
