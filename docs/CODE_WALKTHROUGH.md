@@ -1008,3 +1008,118 @@ Possible future improvements:
 * Improve empty-state UX
 * Add better analytics for user behavior
 * Improve venue ranking based on ratings and preferences
+
+---
+
+## Favorites and Daily Venue Ratings
+
+Work4U separates between two different star concepts:
+
+### 1. Favorite Star
+
+The favorite star is personal for each logged-in user.
+
+When a user clicks the favorite star near a venue, the venue ID is saved inside the user's preferences under the field:
+
+favoriteVenueIds
+
+This data is stored in the DynamoDB table:
+
+Work4U_UserPreferences
+
+This means that favorites are private and user-specific. If User A marks a venue as favorite, User B will not see it as favorite unless User B also marks it.
+
+Frontend flow:
+
+User clicks favorite star  
+↓  
+Home.tsx toggleFavorite  
+↓  
+api.preferences.save  
+↓  
+POST /preferences  
+↓  
+Preferences Lambda  
+↓  
+DynamoDB Work4U_UserPreferences  
+↓  
+Frontend reloads preferences  
+↓  
+The star remains selected after refresh  
+
+Relevant files:
+
+- frontend/src/screens/Home.tsx
+- frontend/src/components/VenueListCard.tsx
+- frontend/src/hooks/usePreferences.ts
+- frontend/src/types/api.ts
+- backend/lambdas/preferences/app.py
+
+---
+
+### 2. Public Venue Rating Stars
+
+The rating stars are public and represent the general rating of the venue.
+
+When a user submits a rating or report, the rating is saved in:
+
+Work4U_Ratings
+
+Then the Ratings Lambda recalculates the venue's average rating and updates:
+
+- Work4U_Venues.averageRating
+- Work4U_Venues.ratingCount
+
+This means that once a venue rating changes, all users can see the updated public venue rating, even if they personally did not rate the venue.
+
+Rating flow:
+
+User submits rating  
+↓  
+POST /ratings  
+↓  
+Ratings Lambda  
+↓  
+Save rating in Work4U_Ratings  
+↓  
+Recalculate venue average rating  
+↓  
+Update Work4U_Venues.averageRating  
+↓  
+Frontend reloads venues  
+↓  
+Updated rating appears for all users  
+
+Relevant files:
+
+- frontend/src/components/dialogs/RatingModal.tsx
+- frontend/src/components/VenueListCard.tsx
+- backend/lambdas/ratings/app.py
+- backend/lambdas/venues/app.py
+
+---
+
+### 3. One Rating Per User Per Venue Per Day
+
+To prevent one user from influencing the public rating too many times in the same day, Work4U limits ratings using this rule:
+
+A user can rate the same venue only once per day.
+
+If the same user visits the same venue on another day, they can submit a new rating again.
+
+Each rating stores a date field:
+
+ratingDate = YYYY-MM-DD
+
+The date is calculated using Israel time:
+
+Asia/Jerusalem
+
+Before creating a new rating, the Ratings Lambda checks whether the same user already rated the same venue on the same date.
+
+If a duplicate rating is detected, the API returns:
+
+DUPLICATE_RESOURCE
+
+This keeps the venue rating more reliable while still allowing users to rate a place again when they visit it on a different day.
+
