@@ -15,7 +15,7 @@ interface LoginProps {
 }
 
 export function Login({ go, openForgot }: LoginProps) {
-  const { signIn } = useAuth();
+  const { signIn, signOut } = useAuth();
   const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [pw, setPw] = useState('');
@@ -32,7 +32,14 @@ export function Login({ go, openForgot }: LoginProps) {
     setErr('');
     setBusy(true);
     try {
-      await signIn(email.trim(), pw, { asAdmin });
+      const session = await signIn(email.trim(), pw, { asAdmin });
+
+      if (asAdmin && !session.isAdmin) {
+        await signOut();
+        setErr('החשבון הזה אינו מוגדר כמנהל. יש לבחור משתמש רגיל ולהתחבר שוב.');
+        return;
+      }
+
       toast('התחברת בהצלחה, מועבר למסך הבית', 'success');
       setTimeout(() => go('home'), 500);
     } catch (e) {
