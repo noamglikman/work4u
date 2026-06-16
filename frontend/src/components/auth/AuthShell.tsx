@@ -1,8 +1,14 @@
 // components/auth/AuthShell.tsx — the split-screen auth layout: brand panel +
-// centered form (ported from AuthBrand / FormWrap in work4u-web-auth.jsx).
+// centered form.
 
 import type { ReactNode } from 'react';
 import { Icon } from '../ui';
+
+const FEATURES = [
+  'מאות מקומות עבודה ולמידה ברחבי הארץ',
+  'סינון לפי Wi-Fi, שקט, שקעים ומחיר',
+  'דירוגים ועדכונים מהקהילה בזמן אמת',
+];
 
 export function AuthBrand() {
   return (
@@ -30,6 +36,7 @@ export function AuthBrand() {
           background: 'rgba(255,255,255,0.08)',
         }}
       />
+
       <div
         style={{
           position: 'absolute',
@@ -41,6 +48,7 @@ export function AuthBrand() {
           background: 'rgba(255,255,255,0.07)',
         }}
       />
+
       <div
         style={{
           position: 'relative',
@@ -67,6 +75,7 @@ export function AuthBrand() {
         </div>
         Work4U
       </div>
+
       <div style={{ position: 'relative' }}>
         <h2
           style={{
@@ -77,25 +86,56 @@ export function AuthBrand() {
             margin: '0 0 16px',
           }}
         >
-          מקום העבודה המושלם נמצא במרחק לחיצה
+          מקום העבודה המתאים לך נמצא במרחק לחיצה
         </h2>
+
         <p style={{ fontSize: 17, lineHeight: 1.6, margin: 0, opacity: 0.92, maxWidth: 420 }}>
-          בתי קפה וחללי עבודה מותאמים בדיוק להעדפות שלך — שקט, שקעים, אינטרנט מהיר ותחזית עומס בזמן
-          אמת.
+          Work4U עוזרת למצוא בתי קפה, ספריות וחללי עבודה שמתאימים לצורת העבודה שלך — לפי מיקום,
+          העדפות ודירוגי משתמשים.
         </p>
-        <div style={{ display: 'flex', gap: 26, marginTop: 34 }}>
-          {[
-            ['1,200+', 'מתחמים'],
-            ['18K', 'דירוגים'],
-            ['4.7★', 'דירוג ממוצע'],
-          ].map(([n, l]) => (
-            <div key={l}>
-              <div style={{ fontSize: 26, fontWeight: 800 }}>{n}</div>
-              <div style={{ fontSize: 13.5, opacity: 0.85 }}>{l}</div>
+
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 12,
+            marginTop: 34,
+            maxWidth: 430,
+          }}
+        >
+          {FEATURES.map((feature) => (
+            <div
+              key={feature}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                fontSize: 15.5,
+                lineHeight: 1.45,
+                opacity: 0.95,
+              }}
+            >
+              <span
+                style={{
+                  width: 24,
+                  height: 24,
+                  borderRadius: 999,
+                  background: 'rgba(255,255,255,0.18)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  fontWeight: 800,
+                }}
+              >
+                ✓
+              </span>
+              <span>{feature}</span>
             </div>
           ))}
         </div>
       </div>
+
       <div style={{ position: 'relative', fontSize: 13, opacity: 0.7 }}>
         © 2026 Work4U · לעבוד מכל מקום
       </div>
