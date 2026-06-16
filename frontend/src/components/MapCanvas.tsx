@@ -1,11 +1,11 @@
-// components/MapCanvas.tsx — stylised map (ported from work4u-screens-main.jsx).
+// components/MapCanvas.tsx — stylised map.
 // Real venue coordinates are projected onto the canvas via lib/geo.projectVenues,
 // so the decorative map works with live data, not hardcoded percentages.
 
 import { useMemo } from 'react';
 import type { VenuePreview } from '../types/view';
 import type { LatLng } from '../lib/geo';
-import { projectUser, projectVenues } from '../lib/geo';
+import { projectVenues } from '../lib/geo';
 import { OCC } from '../lib/labels';
 
 interface MapCanvasProps {
@@ -20,8 +20,8 @@ export function MapCanvas({ venues, onPin, selected, location }: MapCanvasProps)
     () => venues.map((v) => ({ id: v.id, lat: v.lat, lng: v.lng })),
     [venues],
   );
+
   const positions = useMemo(() => projectVenues(points, location), [points, location]);
-  const userPoint = useMemo(() => projectUser(points, location), [points, location]);
 
   return (
     <div style={{ position: 'absolute', inset: 0, background: 'var(--w4-map)', overflow: 'hidden' }}>
@@ -38,6 +38,7 @@ export function MapCanvas({ venues, onPin, selected, location }: MapCanvasProps)
           opacity: 0.9,
         }}
       />
+
       <div
         style={{
           position: 'absolute',
@@ -50,6 +51,7 @@ export function MapCanvas({ venues, onPin, selected, location }: MapCanvasProps)
           opacity: 0.9,
         }}
       />
+
       {/* water */}
       <div
         style={{
@@ -63,6 +65,7 @@ export function MapCanvas({ venues, onPin, selected, location }: MapCanvasProps)
           opacity: 0.8,
         }}
       />
+
       {/* roads */}
       {[18, 44, 70].map((t, i) => (
         <div
@@ -77,6 +80,7 @@ export function MapCanvas({ venues, onPin, selected, location }: MapCanvasProps)
           }}
         />
       ))}
+
       {[26, 58, 82].map((l, i) => (
         <div
           key={'v' + i}
@@ -90,6 +94,7 @@ export function MapCanvas({ venues, onPin, selected, location }: MapCanvasProps)
           }}
         />
       ))}
+
       {/* building blocks */}
       {[
         [10, 34, 40, 26],
@@ -102,41 +107,23 @@ export function MapCanvas({ venues, onPin, selected, location }: MapCanvasProps)
           key={'b' + i}
           style={{
             position: 'absolute',
-            top: b[0] + '%',
-            insetInlineStart: b[1] + '%',
-            width: b[2] + '%',
-            height: b[3] + '%',
-            background: 'rgba(0,0,0,0.04)',
-            borderRadius: 8,
+            insetInlineStart: b[0] + '%',
+            top: b[1] + '%',
+            width: b[2],
+            height: b[3],
+            borderRadius: 9,
+            background: 'rgba(255,255,255,0.28)',
+            boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.25)',
           }}
         />
       ))}
-      {/* user location */}
-      <div
-        style={{
-          position: 'absolute',
-          top: userPoint.top + '%',
-          insetInlineStart: userPoint.left + '%',
-          transform: 'translate(-50%,-50%)',
-        }}
-      >
-        <div
-          style={{
-            width: 18,
-            height: 18,
-            borderRadius: 999,
-            background: 'var(--w4-accent)',
-            border: '3px solid #fff',
-            boxShadow:
-              '0 0 0 6px color-mix(in srgb, var(--w4-accent) 22%, transparent), 0 2px 6px rgba(0,0,0,0.25)',
-          }}
-        />
-      </div>
-      {/* pins */}
+
+      {/* venue pins */}
       {venues.map((v) => {
         const o = OCC[v.crowdLevel];
         const on = selected === v.id;
         const pos = positions[v.id] ?? { top: 50, left: 50 };
+
         return (
           <button
             key={v.id}
