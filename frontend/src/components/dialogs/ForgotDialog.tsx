@@ -11,6 +11,25 @@ import { Dialog } from './Dialog';
 
 type ResetStep = 'request-code' | 'confirm-code';
 
+function passwordResetErrorMessage(e: unknown): string {
+  const name = e instanceof Error ? e.name : '';
+  const message = e instanceof Error ? e.message : '';
+
+  if (name === 'LimitExceededException' || message.includes('Attempt limit exceeded')) {
+    return 'בוצעו יותר מדי ניסיונות לשליחת קוד. המתינו כמה דקות ונסו שוב.';
+  }
+
+  if (name === 'UserNotFoundException' || message.includes('User does not exist')) {
+    return 'לא הצלחנו לשלוח קוד. ודאו שהזנתם מייל שרשום למערכת.';
+  }
+
+  if (name === 'InvalidParameterException') {
+    return 'לא ניתן לשלוח קוד למייל הזה. ודאו שהמייל שייך למשתמש רשום ומאומת.';
+  }
+
+  return 'שליחת קוד האיפוס נכשלה. ודאו שהזנתם מייל שרשום למערכת.';
+}
+
 export function ForgotDialog({ close }: { close: () => void }) {
   const { resetPassword, confirmResetPassword } = useAuth();
   const { toast } = useToast();
@@ -37,7 +56,7 @@ export function ForgotDialog({ close }: { close: () => void }) {
       setStep('confirm-code');
       toast('אם קיים משתמש עם המייל הזה, קוד איפוס נשלח אליו', 'success');
     } catch (e) {
-      toast(e instanceof ApiError ? e.message : 'שליחת קוד האיפוס נכשלה', 'danger');
+      toast(e instanceof ApiError ? e.message : passwordResetErrorMessage(e), 'danger');
     } finally {
       setBusy(false);
     }

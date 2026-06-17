@@ -286,27 +286,6 @@ export function Home({
       {/* Map */}
       <div style={{ position: 'relative', overflow: 'hidden' }}>
         <MapCanvas venues={venues} onPin={(id) => setSelected(id)} selected={selected} location={location} />
-        <button
-          title="מיקום נוכחי"
-          style={{
-            position: 'absolute',
-            insetInlineEnd: 18,
-            bottom: 18,
-            width: 48,
-            height: 48,
-            borderRadius: 14,
-            border: 'none',
-            background: 'var(--w4-surface)',
-            boxShadow: 'var(--w4-shadow)',
-            color: 'var(--w4-accent)',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Icon name="location" size={22} />
-        </button>
         {sel && (
           <div
             onClick={() => openVenue(sel.id)}

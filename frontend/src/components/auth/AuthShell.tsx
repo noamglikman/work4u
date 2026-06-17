@@ -1,5 +1,4 @@
-// components/auth/AuthShell.tsx — the split-screen auth layout: brand panel +
-// centered form.
+// components/auth/AuthShell.tsx — split-screen auth layout with a workspace photo collage.
 
 import type { ReactNode } from 'react';
 import { Icon } from '../ui';
@@ -8,6 +7,15 @@ const FEATURES = [
   'מאות מקומות עבודה ולמידה ברחבי הארץ',
   'סינון לפי Wi-Fi, שקט, שקעים ומחיר',
   'דירוגים ועדכונים מהקהילה בזמן אמת',
+];
+
+const PHOTOS = [
+  '/auth-bg/workspace-1.jpg',
+  '/auth-bg/workspace-2.jpg',
+  '/auth-bg/workspace-3.jpg',
+  '/auth-bg/workspace-4.jpg',
+  '/auth-bg/workspace-5.jpg',
+  '/auth-bg/workspace-6.jpg',
 ];
 
 export function AuthBrand() {
@@ -26,26 +34,56 @@ export function AuthBrand() {
       }}
     >
       <div
+        aria-hidden="true"
         style={{
           position: 'absolute',
-          top: -120,
-          insetInlineEnd: -100,
-          width: 360,
-          height: 360,
-          borderRadius: '50%',
-          background: 'rgba(255,255,255,0.08)',
+          inset: 0,
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gridTemplateRows: 'repeat(3, 1fr)',
+          gap: 10,
+          padding: 22,
+          opacity: 0.34,
+          transform: 'scale(1.04)',
         }}
-      />
+      >
+        {PHOTOS.map((src, i) => (
+          <div
+            key={src}
+            style={{
+              borderRadius: 24,
+              overflow: 'hidden',
+              transform:
+                i % 3 === 0
+                  ? 'translateY(18px)'
+                  : i % 3 === 1
+                    ? 'translateY(-10px)'
+                    : 'translateY(8px)',
+              boxShadow: '0 18px 40px rgba(0,0,0,0.24)',
+            }}
+          >
+            <img
+              src={src}
+              alt=""
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                display: 'block',
+                filter: 'saturate(0.95) contrast(1.04)',
+              }}
+            />
+          </div>
+        ))}
+      </div>
 
       <div
+        aria-hidden="true"
         style={{
           position: 'absolute',
-          bottom: -90,
-          insetInlineStart: -70,
-          width: 260,
-          height: 260,
-          borderRadius: '50%',
-          background: 'rgba(255,255,255,0.07)',
+          inset: 0,
+          background:
+            'linear-gradient(150deg, rgba(126, 65, 34, 0.92), rgba(188, 97, 55, 0.84))',
         }}
       />
 
@@ -69,6 +107,7 @@ export function AuthBrand() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
+            backdropFilter: 'blur(8px)',
           }}
         >
           <Icon name="coffee" size={26} stroke="#FFF8F2" sw={1.9} />
@@ -79,30 +118,23 @@ export function AuthBrand() {
       <div style={{ position: 'relative' }}>
         <h2
           style={{
-            fontSize: 38,
-            fontWeight: 800,
-            lineHeight: 1.2,
-            letterSpacing: '-0.02em',
+            fontSize: 40,
+            fontWeight: 900,
+            lineHeight: 1.18,
+            letterSpacing: '-0.03em',
             margin: '0 0 16px',
+            textShadow: '0 8px 28px rgba(0,0,0,0.22)',
           }}
         >
-          מקום העבודה המתאים לך נמצא במרחק לחיצה
+          המקום הבא לעבוד ממנו כבר מחכה לך
         </h2>
 
-        <p style={{ fontSize: 17, lineHeight: 1.6, margin: 0, opacity: 0.92, maxWidth: 420 }}>
+        <p style={{ fontSize: 17, lineHeight: 1.65, margin: 0, opacity: 0.95, maxWidth: 430 }}>
           Work4U עוזרת למצוא בתי קפה, ספריות וחללי עבודה שמתאימים לצורת העבודה שלך — לפי מיקום,
           העדפות ודירוגי משתמשים.
         </p>
 
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 12,
-            marginTop: 34,
-            maxWidth: 430,
-          }}
-        >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 34, maxWidth: 430 }}>
           {FEATURES.map((feature) => (
             <div
               key={feature}
@@ -112,7 +144,7 @@ export function AuthBrand() {
                 gap: 10,
                 fontSize: 15.5,
                 lineHeight: 1.45,
-                opacity: 0.95,
+                opacity: 0.96,
               }}
             >
               <span
@@ -125,7 +157,8 @@ export function AuthBrand() {
                   alignItems: 'center',
                   justifyContent: 'center',
                   flexShrink: 0,
-                  fontWeight: 800,
+                  fontWeight: 900,
+                  backdropFilter: 'blur(8px)',
                 }}
               >
                 ✓
@@ -136,7 +169,7 @@ export function AuthBrand() {
         </div>
       </div>
 
-      <div style={{ position: 'relative', fontSize: 13, opacity: 0.7 }}>
+      <div style={{ position: 'relative', fontSize: 13, opacity: 0.78 }}>
         © 2026 Work4U · לעבוד מכל מקום
       </div>
     </div>
