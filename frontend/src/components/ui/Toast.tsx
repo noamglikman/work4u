@@ -11,9 +11,9 @@ export interface ToastData {
 }
 
 const COLORS: Record<ToastTone, [string, string]> = {
-  default: ['var(--w4-text)', 'var(--w4-bg)'],
-  success: ['var(--w4-success)', '#fff'],
-  danger: ['var(--w4-danger)', '#fff'],
+  default: ['#fff7ed', '#3b2416'],
+  success: ['#ecfdf3', '#14532d'],
+  danger: ['#fef2f2', '#7f1d1d'],
 };
 
 export function Toast({ toast }: { toast: ToastData | null }) {
