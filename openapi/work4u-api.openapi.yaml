@@ -1,0 +1,711 @@
+openapi: 3.0.3
+info:
+  title: Work4U API
+  version: 1.0.0
+  description: REST API for the Work4U AWS serverless backend.
+servers:
+  - url: https://{apiId}.execute-api.{region}.amazonaws.com/dev
+    variables:
+      apiId:
+        default: example
+      region:
+        default: us-east-1
+security:
+  - CognitoBearerAuth: []
+paths:
+  /users/me:
+    get:
+      summary: Get the current user profile
+      responses:
+        "200":
+          description: Current user profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfileEnvelope"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /preferences:
+    get:
+      summary: Get current user preferences
+      responses:
+        "200":
+          description: User preferences
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserPreferencesEnvelope"
+    post:
+      summary: Save current user preferences
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserPreferencesInput"
+      responses:
+        "200":
+          description: Saved preferences
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserPreferencesEnvelope"
+  /venues:
+    get:
+      summary: List active venues
+      parameters:
+        - in: query
+          name: lat
+          schema:
+            type: number
+        - in: query
+          name: lng
+          schema:
+            type: number
+        - in: query
+          name: radiusKm
+          schema:
+            type: number
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: priceRange
+          schema:
+            type: string
+            enum: [low, medium, high, any]
+        - in: query
+          name: wifiQuality
+          schema:
+            $ref: "#/components/schemas/WifiQuality"
+        - in: query
+          name: quietEnvironment
+          schema:
+            type: boolean
+        - in: query
+          name: needPowerOutlet
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Venue list
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/VenueSummary"
+  /venues/{venueId}:
+    get:
+      summary: Get venue details
+      parameters:
+        - $ref: "#/components/parameters/VenueId"
+      responses:
+        "200":
+          description: Venue details
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/VenueDetail"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /ratings:
+    post:
+      summary: Submit a venue rating
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RatingInput"
+      responses:
+        "200":
+          description: Created rating
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Rating"
+  /ratings/my:
+    get:
+      summary: List ratings created by the current user
+      responses:
+        "200":
+          description: Current user ratings
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Rating"
+  /ratings/{ratingId}:
+    put:
+      summary: Update a rating
+      parameters:
+        - $ref: "#/components/parameters/RatingId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RatingUpdate"
+      responses:
+        "200":
+          description: Updated rating
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericEnvelope"
+    delete:
+      summary: Delete a rating
+      parameters:
+        - $ref: "#/components/parameters/RatingId"
+      responses:
+        "200":
+          description: Deleted rating
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericEnvelope"
+  /learning:
+    get:
+      summary: Get personalization learning profile
+      responses:
+        "200":
+          description: Learning profile
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/UserLearningProfile"
+  /learning/event:
+    post:
+      summary: Record a personalization event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LearningEventInput"
+      responses:
+        "200":
+          description: Updated learning profile
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/UserLearningProfile"
+  /admin/venues:
+    post:
+      summary: Create a venue
+      description: Requires membership in the Cognito Admins group.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VenueInput"
+      responses:
+        "200":
+          description: Created venue id
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericEnvelope"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /admin/venues/{venueId}:
+    put:
+      summary: Update a venue
+      description: Requires membership in the Cognito Admins group.
+      parameters:
+        - $ref: "#/components/parameters/VenueId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VenueInput"
+      responses:
+        "200":
+          description: Updated venue
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericEnvelope"
+    delete:
+      summary: Soft-delete a venue
+      description: Requires membership in the Cognito Admins group.
+      parameters:
+        - $ref: "#/components/parameters/VenueId"
+      responses:
+        "200":
+          description: Venue marked inactive
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenericEnvelope"
+  /admin/venues/{venueId}/images/upload-url:
+    post:
+      summary: Create a presigned S3 upload URL for a venue image
+      description: Requires membership in the Cognito Admins group.
+      parameters:
+        - $ref: "#/components/parameters/VenueId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fileName, contentType]
+              properties:
+                fileName:
+                  type: string
+                contentType:
+                  type: string
+      responses:
+        "200":
+          description: Presigned upload URL and public image URL
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/UploadUrlResponse"
+components:
+  securitySchemes:
+    CognitoBearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    VenueId:
+      in: path
+      name: venueId
+      required: true
+      schema:
+        type: string
+    RatingId:
+      in: path
+      name: ratingId
+      required: true
+      schema:
+        type: string
+  responses:
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+  schemas:
+    SuccessEnvelope:
+      type: object
+      required: [success, message, data]
+      properties:
+        success:
+          type: boolean
+          enum: [true]
+        message:
+          type: string
+        data: {}
+    ErrorEnvelope:
+      type: object
+      required: [success, message, errorCode]
+      properties:
+        success:
+          type: boolean
+          enum: [false]
+        message:
+          type: string
+        errorCode:
+          type: string
+    GenericEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/SuccessEnvelope"
+        - type: object
+          properties:
+            data:
+              type: object
+              additionalProperties: true
+    UserRole:
+      type: string
+      enum: [USER, ADMIN]
+    PriceRange:
+      type: string
+      enum: [low, medium, high]
+    WifiQuality:
+      type: string
+      enum: [low, medium, high]
+    NoiseLevel:
+      type: string
+      enum: [low, medium, high]
+    SeatType:
+      type: string
+      enum: [table, sofa, bar, any]
+    CrowdLevel:
+      type: string
+      enum: [free, reasonable, crowded]
+    UserProfile:
+      type: object
+      required: [userId, email, role, createdAt]
+      properties:
+        userId:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          $ref: "#/components/schemas/UserRole"
+        createdAt:
+          type: string
+          format: date-time
+    UserProfileEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/SuccessEnvelope"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/UserProfile"
+    UserPreferences:
+      type: object
+      required: [quietEnvironment, needPowerOutlet, wifiQuality, preferredSeatType, priceRange]
+      properties:
+        userId:
+          type: string
+        quietEnvironment:
+          type: boolean
+        needPowerOutlet:
+          type: boolean
+        wifiQuality:
+          $ref: "#/components/schemas/WifiQuality"
+        preferredSeatType:
+          $ref: "#/components/schemas/SeatType"
+        priceRange:
+          $ref: "#/components/schemas/PriceRange"
+        updatedAt:
+          type: string
+          format: date-time
+    UserPreferencesInput:
+      type: object
+      required: [quietEnvironment, needPowerOutlet, wifiQuality, preferredSeatType, priceRange]
+      properties:
+        quietEnvironment:
+          type: boolean
+        needPowerOutlet:
+          type: boolean
+        wifiQuality:
+          $ref: "#/components/schemas/WifiQuality"
+        preferredSeatType:
+          $ref: "#/components/schemas/SeatType"
+        priceRange:
+          $ref: "#/components/schemas/PriceRange"
+    UserPreferencesEnvelope:
+      allOf:
+        - $ref: "#/components/schemas/SuccessEnvelope"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/UserPreferences"
+    VenueSummary:
+      type: object
+      required:
+        - venueId
+        - name
+        - address
+        - latitude
+        - longitude
+        - priceRange
+        - wifiQuality
+        - noiseLevel
+        - hasPowerOutlets
+        - averageRating
+        - currentCrowdLevel
+      properties:
+        venueId:
+          type: string
+        name:
+          type: string
+        address:
+          type: string
+        latitude:
+          type: number
+        longitude:
+          type: number
+        priceRange:
+          $ref: "#/components/schemas/PriceRange"
+        wifiQuality:
+          $ref: "#/components/schemas/WifiQuality"
+        noiseLevel:
+          $ref: "#/components/schemas/NoiseLevel"
+        hasPowerOutlets:
+          type: boolean
+        averageRating:
+          type: number
+        currentCrowdLevel:
+          $ref: "#/components/schemas/CrowdLevel"
+        mainImageUrl:
+          type: string
+        categoryLabel:
+          type: string
+        accessNote:
+          type: string
+        contactNote:
+          type: string
+        website:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+        isActive:
+          type: boolean
+        openingHours:
+          type: string
+    VenueDetail:
+      allOf:
+        - $ref: "#/components/schemas/VenueSummary"
+        - type: object
+          required: [openingHours, description, imageUrls, forecast]
+          properties:
+            openingHours:
+              type: string
+            description:
+              type: string
+            imageUrls:
+              type: array
+              items:
+                type: string
+            forecast:
+              type: array
+              items:
+                $ref: "#/components/schemas/ForecastPoint"
+    ForecastPoint:
+      type: object
+      required: [hour, crowdLevel]
+      properties:
+        hour:
+          type: string
+          example: "09:00"
+        crowdLevel:
+          $ref: "#/components/schemas/CrowdLevel"
+    VenueInput:
+      type: object
+      required:
+        - name
+        - address
+        - latitude
+        - longitude
+        - openingHours
+        - priceRange
+        - wifiQuality
+        - noiseLevel
+        - hasPowerOutlets
+        - description
+        - imageUrls
+      properties:
+        name:
+          type: string
+        address:
+          type: string
+        latitude:
+          type: number
+        longitude:
+          type: number
+        openingHours:
+          type: string
+        priceRange:
+          $ref: "#/components/schemas/PriceRange"
+        wifiQuality:
+          $ref: "#/components/schemas/WifiQuality"
+        noiseLevel:
+          $ref: "#/components/schemas/NoiseLevel"
+        hasPowerOutlets:
+          type: boolean
+        description:
+          type: string
+        imageUrls:
+          type: array
+          items:
+            type: string
+        categoryLabel:
+          type: string
+        accessNote:
+          type: string
+        contactNote:
+          type: string
+        website:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+    Rating:
+      type: object
+      required: [ratingId, venueId, crowdLevel, wifiRating, noiseRating, createdAt]
+      properties:
+        ratingId:
+          type: string
+        userId:
+          type: string
+        venueId:
+          type: string
+        venueName:
+          type: string
+        crowdLevel:
+          $ref: "#/components/schemas/CrowdLevel"
+        wifiRating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        noiseRating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        comment:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    RatingInput:
+      type: object
+      required: [venueId, crowdLevel, wifiRating, noiseRating]
+      properties:
+        venueId:
+          type: string
+        crowdLevel:
+          $ref: "#/components/schemas/CrowdLevel"
+        wifiRating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        noiseRating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        comment:
+          type: string
+    RatingUpdate:
+      type: object
+      required: [crowdLevel, wifiRating, noiseRating]
+      properties:
+        crowdLevel:
+          $ref: "#/components/schemas/CrowdLevel"
+        wifiRating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        noiseRating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        comment:
+          type: string
+    UserLearningProfile:
+      type: object
+      required: [userId, categoryScores, searchTermScores, totalEvents]
+      properties:
+        userId:
+          type: string
+        categoryScores:
+          type: object
+          additionalProperties:
+            type: number
+        searchTermScores:
+          type: object
+          additionalProperties:
+            type: number
+        totalEvents:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    LearningEventInput:
+      oneOf:
+        - type: object
+          required: [type, searchTerm]
+          properties:
+            type:
+              type: string
+              enum: [search]
+            searchTerm:
+              type: string
+        - type: object
+          required: [type, venueId]
+          properties:
+            type:
+              type: string
+              enum: [open_venue]
+            venueId:
+              type: string
+            placeType:
+              type: string
+        - type: object
+          required: [type, venueId, rating]
+          properties:
+            type:
+              type: string
+              enum: [rating]
+            venueId:
+              type: string
+            placeType:
+              type: string
+            rating:
+              type: number
+    UploadUrlResponse:
+      type: object
+      required: [uploadUrl, imageUrl]
+      properties:
+        uploadUrl:
+          type: string
+        imageUrl:
+          type: string

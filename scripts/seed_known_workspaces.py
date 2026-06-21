@@ -1,11 +1,12 @@
+import os
 import time
 from decimal import Decimal
 
 import boto3
 
 
-TABLE_NAME = "Work4U_Venues"
-REGION = "us-east-1"
+TABLE_NAME = os.environ.get("VENUES_TABLE", "Work4U_Venues")
+REGION = os.environ.get("AWS_REGION", "us-east-1")
 
 
 KNOWN_PLACES = [

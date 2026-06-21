@@ -89,7 +89,7 @@ async function run() {
   check('isOpenNow: open at noon', isOpenNow('08:00-22:00', new Date('2026-06-01T12:00:00')));
   check('isOpenNow: closed at 6am', !isOpenNow('08:00-22:00', new Date('2026-06-01T06:00:00')));
   check('isOpenNow: overnight range', isOpenNow('20:00-02:00', new Date('2026-06-01T01:00:00')));
-  check('isOpenNow: unknown → open', isOpenNow(undefined));
+  check('isOpenNow: unknown → closed', !isOpenNow(undefined));
 
   console.log(failures === 0 ? '\nALL PASSED' : `\n${failures} FAILED`);
   process.exit(failures === 0 ? 0 : 1);
