@@ -36,6 +36,7 @@ mkdir -p "$STAGE_DIR/$PACKAGE_ROOT/docs"
 cp "docs/aws-installation-guide.md" "$STAGE_DIR/$PACKAGE_ROOT/docs/"
 cp "docs/repository-access.md" "$STAGE_DIR/$PACKAGE_ROOT/docs/"
 cp "docs/developer-maintenance.md" "$STAGE_DIR/$PACKAGE_ROOT/docs/"
+cp "docs/developer-maintenance-he.md" "$STAGE_DIR/$PACKAGE_ROOT/docs/" 2>/dev/null || true
 cp "docs/CODE_WALKTHROUGH.md" "$STAGE_DIR/$PACKAGE_ROOT/docs/" 2>/dev/null || true
 cp "docs/PROJECT_OVERVIEW.md" "$STAGE_DIR/$PACKAGE_ROOT/docs/" 2>/dev/null || true
 cp "docs/Work4U_Technical_System_Documentation.docx" "$STAGE_DIR/$PACKAGE_ROOT/docs/" 2>/dev/null || true

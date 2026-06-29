@@ -1,48 +1,42 @@
-# Work4U - technical delivery and installation
+# Work4U - technical installation handoff
 
-This repository contains the Work4U source code and AWS deployment assets.
-It is intended for a technical team that needs to install the system in a clean
-AWS account, preferably AWS Learner Lab.
+This package contains the Work4U source code, AWS infrastructure definition,
+installation scripts, API contract, and technical documentation required to
+deploy the system in a clean AWS account.
 
-The recommended installation path uses AWS CloudShell inside the AWS Console.
-That means the reviewer does not need to install AWS CLI or AWS SAM CLI on a
-personal computer.
-
-## What is included
+## Delivery contents
 
 - `backend/` - Python AWS Lambda source code.
-- `frontend/` - React + Vite + TypeScript web application.
-- `infrastructure/template.yaml` - AWS SAM/CloudFormation IaC template for AWS Learner Lab.
-- `infrastructure/template-prod.yaml` - production-style SAM template that creates its own IAM policies.
-- `openapi/work4u-api.openapi.yaml` - API Gateway/OpenAPI contract.
-- `scripts/` - installation, build, seed, cleanup, and packaging scripts.
-- `docs/aws-installation-guide.md` - detailed AWS installation guide in Hebrew.
-- `docs/developer-maintenance.md` - developer maintenance guide and API interface documentation.
-- `docs/repository-access.md` - repository URL and access note.
-- User and admin manuals:
-  - `docs/Work4U_מדריך_למשתמש (1).docx`
-  - `docs/Work4U_מדריך_מנהל.docx`
+- `frontend/` - React, Vite, and TypeScript web application.
+- `infrastructure/template.yaml` - AWS SAM/CloudFormation template for AWS Learner Lab.
+- `infrastructure/template-prod.yaml` - SAM template for a regular AWS account.
+- `openapi/work4u-api.openapi.yaml` - API Gateway OpenAPI contract.
+- `scripts/` - deployment, build, seed, cleanup, and packaging scripts.
+- `docs/aws-installation-guide.md` - full AWS installation procedure.
+- `docs/developer-maintenance.md` - developer maintenance and API documentation.
+- `docs/repository-access.md` - source repository access details.
+- `docs/Work4U_מדריך_למשתמש (1).docx` - end-user manual.
+- `docs/Work4U_מדריך_מנהל.docx` - administrator manual.
 
-## Fast installation path with AWS CloudShell
+## AWS CloudShell installation sequence
 
-Open AWS Learner Lab, start the lab, open the AWS Console, and launch
-AWS CloudShell. Upload and unzip the delivery ZIP, or clone the repository if
-you have read access. Then run the commands from the repository root inside
-CloudShell.
+Run the following commands from the project root inside AWS CloudShell.
 
-If you use the ZIP delivery:
+If installing from the ZIP delivery:
 
 ```bash
 unzip Work4U-source-delivery.zip
 cd Work4U-source-delivery
 ```
 
-If you use Git:
+If installing from Git:
 
 ```bash
 git clone https://github.com/noamglikman/work4u.git
 cd work4u
 ```
+
+Then run:
 
 ```bash
 aws sts get-caller-identity
@@ -52,41 +46,51 @@ bash scripts/seed-data.sh
 bash scripts/build-frontend.sh
 ```
 
-After that, the production frontend build is in:
+The frontend production build is created at:
 
 ```text
 frontend/dist/
 ```
 
-For a full explanation, CloudShell flow, AWS Learner Lab notes, admin-user setup,
-verification steps, maintenance, and cleanup, read:
+For the complete deployment procedure, validation checklist, admin setup,
+maintenance commands, and cleanup procedure, use:
 
 ```text
 docs/aws-installation-guide.md
 ```
 
-## Build the delivery ZIP
+## Build delivery ZIP
 
 ```bash
 bash scripts/package-release.sh
 ```
 
-The ZIP is created under:
+Output:
 
 ```text
 dist/Work4U-source-delivery.zip
 ```
 
-The packaging script intentionally excludes heavy or local-only folders such as
-`.git`, `.vscode`, `node_modules`, `.aws-sam`, `dist`, and operating-system
-metadata files.
+The packaging script excludes local and heavy development artifacts, including:
 
-## Repository
+```text
+.git
+.vscode
+.idea
+node_modules
+.aws-sam
+dist
+build
+.env
+.DS_Store
+*.Zone.Identifier
+~$*
+```
 
-Source repository:
+## Source repository
 
 ```text
 https://github.com/noamglikman/work4u.git
 ```
 
-Make sure the customer or examiner receives read access before delivery.
+Grant the receiving technical team or examiner read access before delivery.

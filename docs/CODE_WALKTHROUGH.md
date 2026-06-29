@@ -1122,4 +1122,3 @@ If a duplicate rating is detected, the API returns:
 DUPLICATE_RESOURCE
 
 This keeps the venue rating more reliable while still allowing users to rate a place again when they visit it on a different day.
-

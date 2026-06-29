@@ -1,47 +1,57 @@
-# Work4U - מדריך התקנה טכני לחשבון AWS נקי
+# Work4U - מדריך התקנה לחשבון AWS נקי
 
-המטרה של מדריך זה היא לאפשר לאיש טכני לקחת את קבצי המקור של Work4U, לפרוס את
-המערכת בחשבון AWS נקי, להפעיל אותה, לבדוק אותה, ולתחזק אותה.
-
-המדריך נכתב עבור AWS Learner Lab ו-AWS CloudShell. זו הדרך המומלצת כי היא לא
-דורשת התקנת AWS CLI או AWS SAM CLI על המחשב האישי.
+מסמך זה מגדיר את תהליך ההתקנה של Work4U בחשבון AWS נקי. סביבת היעד הראשית
+היא AWS Learner Lab באמצעות AWS CloudShell.
 
 ## 1. מבנה הפרויקט
 
 ```text
-backend/                  קוד Lambda בפייתון
-frontend/                 אתר React + Vite + TypeScript
-infrastructure/           קבצי IaC לפריסת AWS
-openapi/                  Swagger/OpenAPI של ה-API
-scripts/                  סקריפטים להתקנה, build, seed ואריזה
-docs/                     מדריכים וקבצי הסבר
+backend/                  קוד מקור של AWS Lambda בפייתון
+frontend/                 אפליקציית React + Vite + TypeScript
+infrastructure/           תבניות AWS SAM/CloudFormation
+openapi/                  חוזה OpenAPI של ה-API
+scripts/                  סקריפטים לפריסה, בנייה, טעינת נתונים, מחיקה ואריזה
+docs/                     תיעוד טכני ותיעוד מסירה
 ```
 
-השירותים שנוצרים ב-AWS:
+## 2. משאבי AWS שנוצרים בפריסה
 
-- Amazon Cognito - התחברות, הרשמה וקבוצות משתמשים.
-- Amazon API Gateway - REST API מאובטח באמצעות Cognito JWT.
-- AWS Lambda - פונקציות backend.
-- Amazon DynamoDB - שמירת מתחמים, העדפות, דירוגים ופרופיל למידה.
-- Amazon S3 - שמירת תמונות מתחמים.
+הפריסה יוצרת את המשאבים הבאים:
 
-## 2. דרישות מקדימות
+- Amazon Cognito User Pool ו-User Pool Client.
+- קבוצות Cognito:
+  - `Users`
+  - `Admins`
+- API Gateway REST API עם stage בשם `dev`.
+- פונקציות Lambda:
+  - `Work4U-AutoConfirmSignUpFunction`
+  - `Work4U-PreferencesFunction`
+  - `Work4U-VenuesFunction`
+  - `Work4U-RatingsFunction`
+  - `Work4U-AdminFunction`
+  - `Work4U-LearningFunction`
+- טבלאות DynamoDB:
+  - `Work4U_UserPreferences`
+  - `Work4U_Venues`
+  - `Work4U_Ratings`
+  - `Work4U_UserLearning`
+- דלי S3 לתמונות מתחמים:
+  - `work4u-venue-images-<account-id>-<region>`
 
-בדרך המומלצת מתקינים מתוך AWS CloudShell, ולכן על המחשב האישי צריך רק:
+## 3. דרישות מקדימות
 
-- דפדפן.
-- גישה ל-AWS Learner Lab או לחשבון AWS.
-- קובץ ה-ZIP של הפרויקט או הרשאת קריאה ל-Repository.
+יש להריץ את ההתקנה מתוך AWS CloudShell בחשבון היעד.
 
-בתוך AWS CloudShell כבר זמינים בדרך כלל הכלים הדרושים:
+כלים נדרשים בסביבת ההתקנה:
 
-- AWS CLI v2
+- AWS CLI
 - AWS SAM CLI
-- Node.js ו-npm
+- Node.js
+- npm
 - Python 3
-- הרשאות AWS פעילות
+- zip או תמיכת Python zipfile
 
-בדיקה מהירה בתוך CloudShell:
+בדיקת כלים:
 
 ```bash
 aws --version
@@ -51,116 +61,100 @@ npm --version
 python3 --version
 ```
 
-הערה: אם איש טכני בוחר להתקין מהמחשב האישי ולא מ-CloudShell, עליו להתקין את
-AWS CLI, AWS SAM CLI, Node.js, npm ו-Python בעצמו. זו לא הדרך הראשית במדריך.
-
-## 3. AWS Learner Lab ו-CloudShell
-
-אם משתמשים ב-AWS Learner Lab:
-
-1. פותחים את ה-Lab.
-2. לוחצים על Start Lab.
-3. מחכים שה-Lab יהיה פעיל.
-4. לוחצים על AWS כדי לפתוח את AWS Console.
-5. פותחים AWS CloudShell מהסרגל העליון של ה-Console.
-6. בודקים שהחיבור עובד:
+בדיקת חשבון AWS פעיל:
 
 ```bash
 aws sts get-caller-identity
 ```
 
-אם הפקודה מחזירה `Account`, `UserId` ו-`Arn`, החיבור תקין.
+יש להמשיך רק אם הפקודה מחזירה את חשבון ה-AWS שבו רוצים להתקין את המערכת.
 
-בדרך CloudShell אין צורך להעתיק AWS CLI credentials למחשב האישי. CloudShell
-נפתח בתוך החשבון הפעיל ומשתמש בהרשאות של הסשן הנוכחי.
+## 4. העברת הפרויקט לסביבת ההתקנה
 
-מקור רשמי של AWS: תיעוד CloudShell מציין ש-AWS CLI, AWS SAM CLI, Node.js/npm,
-Python, Git ו-zip/unzip זמינים כחלק מהתוכנות המותקנות מראש בסביבת CloudShell.
+### אפשרות א' - התקנה מקובץ ZIP
 
-## 4. העברת קבצי הפרויקט ל-CloudShell
-
-יש שתי אפשרויות:
-
-אפשרות מומלצת למסירה: מעלים את קובץ ה-ZIP שהוגש.
-
-1. בתוך CloudShell לוחצים Actions.
-2. בוחרים Upload file.
-3. מעלים את `Work4U-source-delivery.zip`.
-4. מריצים:
+יש להעלות את `Work4U-source-delivery.zip` ל-CloudShell ולהריץ:
 
 ```bash
 unzip Work4U-source-delivery.zip
 cd Work4U-source-delivery
 ```
 
-אפשרות נוספת: משכפלים את ה-Repository, אם ניתנה הרשאת קריאה:
+### אפשרות ב' - התקנה מ-Git
+
+יש להשתמש באפשרות זו רק לאחר שניתנה הרשאת קריאה ל-Repository.
 
 ```bash
 git clone https://github.com/noamglikman/work4u.git
 cd work4u
 ```
 
-מכאן והלאה כל הפקודות במדריך מורצות משורש תיקיית הפרויקט.
+מנקודה זו כל הפקודות מורצות משורש הפרויקט.
 
-ב-Learner Lab משתמשים בתבנית:
+## 5. בחירת תבנית פריסה
 
-```text
-infrastructure/template.yaml
-```
-
-התבנית הזו משתמשת ב-IAM Role בשם `LabRole`, כדי להימנע מיצירת Roles חדשים
-שבדרך כלל חסומה בסביבות לימוד.
-
-## 5. מה זה IaC ומה הסקריפטים עושים
-
-IaC הוא קיצור של Infrastructure as Code. במקום ליצור ידנית משאבים במסך של AWS,
-הפרויקט כולל קובץ YAML שמגדיר את כל התשתית:
+עבור AWS Learner Lab יש להשתמש בתבנית:
 
 ```text
 infrastructure/template.yaml
 ```
 
-AWS SAM ו-CloudFormation קוראים את הקובץ הזה ויוצרים את המשאבים באופן אוטומטי.
+תבנית זו משתמשת ב-Role קיים בשם:
 
-CloudShell הוא רק המקום שבו מריצים את הפקודות. IaC הוא הקובץ שמגדיר מה AWS
-צריך לבנות. הסקריפטים הם מעטפת נוחה שמריצה את הפקודות לפי הסדר.
+```text
+LabRole
+```
 
-הסקריפטים תחת `scripts/` עוטפים את הפקודות הארוכות:
+עבור חשבון AWS רגיל ניתן להשתמש בתבנית:
 
-- `deploy-backend.sh` - בונה ופורס את תשתית ה-backend.
-- `write-frontend-env.sh` - קורא את ה-Outputs מ-CloudFormation ויוצר `frontend/.env`.
-- `seed-data.sh` - מכניס נתוני מתחמים התחלתיים ל-DynamoDB.
-- `build-frontend.sh` - מתקין תלויות ובונה את האתר.
-- `delete-stack.sh` - מוחק את ה-stack בסיום בדיקה.
-- `package-release.sh` - יוצר ZIP נקי למסירה.
+```text
+infrastructure/template-prod.yaml
+```
 
-## 6. פריסת backend ל-AWS
-
-מריצים מתוך CloudShell, משורש הפרויקט:
+פריסה עם התבנית לחשבון AWS רגיל:
 
 ```bash
-bash scripts/deploy-backend.sh
+TEMPLATE=infrastructure/template-prod.yaml bash scripts/deploy-backend.sh
 ```
 
-ברירת המחדל:
+ערכי ברירת מחדל:
 
-- Stack name: `work4u`
-- Region: `us-east-1`
-- Template: `infrastructure/template.yaml`
+```text
+Stack name: work4u
+Region:     us-east-1
+Template:   infrastructure/template.yaml
+```
 
-אפשר לשנות:
+שינוי שם stack או region:
 
 ```bash
 STACK_NAME=work4u-test AWS_REGION=us-east-1 bash scripts/deploy-backend.sh
 ```
 
-בסיום הפריסה הסקריפט יכתוב קובץ:
+## 6. פריסת backend
+
+יש להריץ:
+
+```bash
+bash scripts/deploy-backend.sh
+```
+
+הסקריפט מבצע:
+
+```text
+בדיקת זהות AWS
+SAM build
+SAM deploy
+ייצוא Outputs מ-CloudFormation
+```
+
+קובץ פלט שנוצר:
 
 ```text
 docs/aws-outputs.generated.md
 ```
 
-הקובץ כולל ערכים כמו:
+הקובץ כולל:
 
 - `ApiBaseUrl`
 - `UserPoolId`
@@ -168,100 +162,106 @@ docs/aws-outputs.generated.md
 - `VenueImagesBucketName`
 - שמות טבלאות DynamoDB
 
-## 7. יצירת קובץ סביבת frontend
+## 7. יצירת קובץ סביבה ל-frontend
 
-אחרי שה-backend נפרס:
+יש להריץ לאחר סיום פריסת ה-backend:
 
 ```bash
 bash scripts/write-frontend-env.sh
 ```
 
-הסקריפט יוצר:
+קובץ שנוצר:
 
 ```text
 frontend/.env
 ```
 
-עם ערכים בפורמט:
+מפתחות צפויים:
 
 ```bash
 VITE_USE_MOCK=false
-VITE_API_BASE_URL=https://example.execute-api.us-east-1.amazonaws.com/dev
+VITE_API_BASE_URL=<api-gateway-url>
 VITE_AWS_REGION=us-east-1
-VITE_COGNITO_USER_POOL_ID=us-east-1_example
-VITE_COGNITO_USER_POOL_CLIENT_ID=exampleclientid
-VITE_S3_BUCKET=work4u-venue-images-example-us-east-1
+VITE_COGNITO_USER_POOL_ID=<user-pool-id>
+VITE_COGNITO_USER_POOL_CLIENT_ID=<user-pool-client-id>
+VITE_S3_BUCKET=<venue-images-bucket>
 ```
 
-במצב הזה האתר מפסיק לעבוד מול mock data ומתחבר ל-AWS האמיתי.
+יש לבנות את ה-frontend רק לאחר יצירת הקובץ הזה.
 
-## 8. הכנסת נתוני התחלה
+## 8. טעינת נתוני התחלה
 
-כדי שהמערכת לא תעלה ריקה:
+יש להריץ:
 
 ```bash
 bash scripts/seed-data.sh
 ```
 
-הסקריפט מריץ את:
-
-```text
-scripts/seed_known_workspaces.py
-```
-
-ומכניס מתחמי עבודה, ספריות ובתי קפה לטבלת:
+הסקריפט מכניס נתוני מתחמים התחלתיים לטבלה:
 
 ```text
 Work4U_Venues
 ```
 
-## 9. בניית האתר
+סקריפט המקור:
+
+```text
+scripts/seed_known_workspaces.py
+```
+
+## 9. בניית frontend
+
+יש להריץ:
 
 ```bash
 bash scripts/build-frontend.sh
 ```
 
-התוצר נמצא כאן:
+הסקריפט מבצע:
+
+```text
+npm ci
+npm run typecheck
+npm run smoke
+npm run build
+```
+
+תוצר הבנייה:
 
 ```text
 frontend/dist/
 ```
 
-אפשר לבדוק בתוך CloudShell בעזרת Vite preview, או להוריד את התוצר למחשב:
+## 10. פרסום frontend
 
-```bash
-cd frontend
-npm run preview
+תוצר האתר הסטטי נמצא ב:
+
+```text
+frontend/dist/
 ```
 
-## 10. פרסום האתר
-
-הפרויקט מספק build סטטי תחת `frontend/dist/`. אפשר לפרסם אותו באחת מהדרכים:
+יש לפרסם את תוכן התיקייה באחת מאפשרויות האירוח הנתמכות בחשבון היעד:
 
 - AWS Amplify Hosting
 - S3 Static Website Hosting
 - CloudFront מעל S3
-- כל שרת static files אחר
+- כל שירות אירוח static files אחר
 
-ב-AWS Learner Lab הדרך הפשוטה לבדיקה היא לבנות את האתר ב-CloudShell, ואז לפי
-צורך להוריד את `frontend/dist/` או להעלות אותו לשירות אירוח סטטי אם ההרשאות
-בחשבון מאפשרות זאת.
+בפרסום ל-S3 או CloudFront יש להעלות את תוכן `frontend/dist/`, ולא את תיקיית
+`frontend/` עצמה.
 
-אם מפרסמים ב-S3/CloudFront, ודאו שהקובץ `frontend/.env` נוצר לפני `npm run build`,
-כי Vite מטמיע את ערכי `VITE_*` בזמן הבנייה.
+## 11. יצירת משתמשים
 
-## 11. יצירת משתמש רגיל ומשתמש מנהל
+### משתמש רגיל
 
-משתמש רגיל:
-
-1. נכנסים לאתר.
+1. פותחים את האתר שפורסם.
 2. נרשמים עם אימייל וסיסמה.
-3. ה-PreSignUp Lambda מאשרת משתמשים אוטומטית בתבנית Learner Lab.
+3. מתחברים למערכת.
 
-משתמש מנהל:
+### משתמש מנהל
 
-1. יוצרים או נרשמים עם משתמש באתר.
-2. מוסיפים אותו לקבוצת Cognito בשם `Admins`:
+1. יוצרים משתמש או נרשמים דרך האתר.
+2. מוסיפים את המשתמש לקבוצת Cognito בשם `Admins`:
 
 ```bash
 aws cognito-idp admin-add-user-to-group \
@@ -271,11 +271,12 @@ aws cognito-idp admin-add-user-to-group \
   --region us-east-1
 ```
 
-3. מתנתקים ומתחברים מחדש כדי לקבל JWT חדש עם ההרשאה.
+3. מתנתקים מהמערכת.
+4. מתחברים מחדש.
 
-## 12. בדיקות אחרי התקנה
+## 12. בדיקות לאחר התקנה
 
-בדיקת CloudFormation:
+### בדיקת CloudFormation
 
 ```bash
 aws cloudformation describe-stacks \
@@ -283,18 +284,13 @@ aws cloudformation describe-stacks \
   --region us-east-1
 ```
 
-בדיקת האתר:
+תוצאה תקינה:
 
-1. לפתוח את האתר.
-2. להירשם.
-3. להתחבר.
-4. לראות רשימת מתחמים.
-5. לפתוח מתחם.
-6. לשמור העדפות.
-7. לשלוח דירוג.
-8. להתחבר כמנהל ולבדוק הוספת מתחם.
+```text
+StackStatus: CREATE_COMPLETE או UPDATE_COMPLETE
+```
 
-בדיקת frontend:
+### בדיקות frontend
 
 ```bash
 cd frontend
@@ -303,101 +299,158 @@ npm run smoke
 npm run build
 ```
 
-## 13. תחזוקה
+### בדיקות פונקציונליות
 
-עדכון backend:
+יש לוודא את התרחישים הבאים:
+
+- הרשמת משתמש.
+- התחברות משתמש.
+- טעינת רשימת מתחמים.
+- פתיחת עמוד מתחם.
+- שמירת העדפות.
+- שליחת דירוג.
+- כניסת משתמש מנהל לאזור ניהול.
+- יצירת מתחם על ידי מנהל.
+- עדכון מתחם על ידי מנהל.
+- מחיקת מתחם על ידי מנהל.
+- יצירת כתובת העלאת תמונה על ידי מנהל.
+
+## 13. פקודות תחזוקה
+
+### פריסה מחדש של backend
 
 ```bash
 bash scripts/deploy-backend.sh
 ```
 
-עדכון frontend:
+### יצירה מחדש של קובץ סביבת frontend
 
 ```bash
 bash scripts/write-frontend-env.sh
+```
+
+### בנייה מחדש של frontend
+
+```bash
 bash scripts/build-frontend.sh
 ```
 
-הוספת נתונים ידנית:
+### טעינת נתוני מתחמים מחדש
 
-- דרך ממשק מנהל באתר.
-- או דרך סקריפטי seed תחת `scripts/`.
+```bash
+bash scripts/seed-data.sh
+```
 
-בדיקת לוגים:
+### צפייה בקבוצות לוגים של Lambda
 
 ```bash
 aws logs describe-log-groups --region us-east-1
 ```
 
-## 14. מחיקה בסיום בדיקה
+## 14. מחיקת סביבת בדיקה
 
-כדי למחוק את המשאבים שנוצרו:
+יש להריץ רק כאשר סביבת הבדיקה צריכה להימחק.
 
 ```bash
 bash scripts/delete-stack.sh
 ```
 
-שימו לב: מחיקת ה-stack מוחקת גם טבלאות DynamoDB ונתונים שנוצרו במהלך הבדיקה.
+הפקודה מוחקת את ה-CloudFormation stack ואת המשאבים שמנוהלים על ידו, כולל
+טבלאות DynamoDB שנוצרו בפריסה.
 
-## 15. תקלות נפוצות
+## 15. פתרון תקלות
 
-`AccessDenied` בזמן deploy:
+### `AccessDenied` בזמן פריסה
 
-- ודאו שה-Learner Lab פעיל.
-- ודאו שה-credentials עדכניים.
-- ודאו שהתבנית היא `infrastructure/template.yaml`.
+יש לבדוק:
 
-`LabRole does not exist`:
+- סשן AWS Learner Lab פעיל.
+- CloudShell פתוח מהחשבון הנכון.
+- `aws sts get-caller-identity` מחזיר את החשבון הצפוי.
+- בפריסת Learner Lab משתמשים ב-`infrastructure/template.yaml`.
 
-- חשבון AWS אינו Learner Lab או שה-Lab לא התחיל.
-- בחשבון AWS רגיל נסו להשתמש ב-`infrastructure/template-prod.yaml`.
+### `LabRole does not exist`
 
-האתר עדיין עובד על mock:
+יש לבצע אחת מהפעולות הבאות:
 
-- בדקו ש-`frontend/.env` קיים.
-- בדקו ש-`VITE_USE_MOCK=false`.
-- הריצו מחדש `npm run build` אחרי שינוי `.env`.
+- להפעיל את AWS Learner Lab ולפרוס מחדש.
+- בחשבון AWS רגיל לפרוס עם `infrastructure/template-prod.yaml`.
 
-אין מתחמים באתר:
+### האתר משתמש ב-mock data
 
-- הריצו `bash scripts/seed-data.sh`.
-- בדקו שהטבלה `Work4U_Venues` קיימת.
+יש לבדוק:
 
-כפתורי מנהל לא מופיעים:
+- `frontend/.env` קיים.
+- `VITE_USE_MOCK=false`.
+- `VITE_API_BASE_URL` מכיל את כתובת API Gateway שנפרסה.
+- ה-frontend נבנה מחדש לאחר יצירת `frontend/.env`.
 
-- ודאו שהמשתמש נמצא בקבוצת Cognito בשם `Admins`.
-- התנתקו והתחברו מחדש.
+### רשימת המתחמים ריקה
 
-## 16. קבצי מסירה
+יש להריץ:
 
-לפני מסירה ללקוח:
+```bash
+bash scripts/seed-data.sh
+```
+
+לאחר מכן יש לוודא שקיימות רשומות בטבלת:
+
+```text
+Work4U_Venues
+```
+
+### פעולות מנהל לא זמינות
+
+יש לבדוק:
+
+- המשתמש קיים ב-Cognito User Pool.
+- המשתמש נמצא בקבוצת `Admins`.
+- המשתמש התנתק והתחבר מחדש לאחר ההוספה לקבוצה.
+
+## 16. יצירת ZIP למסירה
+
+יש להריץ לפני מסירה:
 
 ```bash
 bash scripts/package-release.sh
 ```
 
-התוצר:
+תוצר:
 
 ```text
 dist/Work4U-source-delivery.zip
 ```
 
-ה-ZIP אינו כולל:
+ה-ZIP כולל:
+
+- קוד מקור של Lambda.
+- קוד מקור של frontend.
+- תבניות תשתית AWS.
+- חוזה OpenAPI.
+- סקריפטים להתקנה ולתחזוקה.
+- תיעוד טכני.
+- מדריך משתמש ומדריך מנהל.
+
+ה-ZIP לא כולל:
 
 - `.git`
 - `.vscode`
+- `.idea`
 - `node_modules`
 - `.aws-sam`
-- תיקיות build מקומיות
-- קבצי `Zone.Identifier`
-- קבצי זמניים של Office כגון `~$...`
+- `dist`
+- `build`
+- `.env`
+- `.DS_Store`
+- `*.Zone.Identifier`
+- קבצי Office זמניים התואמים ל-`~$*`
 
-ה-ZIP כן כולל:
+## 17. גישה ל-Repository
 
-- קוד Lambda
-- קוד האתר
-- IaC
-- Swagger/OpenAPI
-- סקריפטים
-- מדריכי התקנה
-- מדריך משתמש ומדריך מנהל
+Repository:
+
+```text
+https://github.com/noamglikman/work4u.git
+```
+
+יש לתת לצוות הטכני או לבודק הרשאת קריאה לפני המסירה.
