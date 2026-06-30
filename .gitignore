@@ -94,3 +94,5 @@ frontend/.env
 
 # Local DynamoDB backups
 backups/
+
+.claude/
