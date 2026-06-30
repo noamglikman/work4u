@@ -12,6 +12,7 @@ const FONT_KEYS: FontKey[] = ['rubik', 'assistant', 'heebo'];
 const FONT_LABEL: Record<FontKey, string> = { rubik: 'Rubik', assistant: 'Assistant', heebo: 'Heebo' };
 
 export function AppearanceSettings() {
+  return null;
   const { tweaks, setTweak } = useTheme();
   const [open, setOpen] = useState(false);
 
