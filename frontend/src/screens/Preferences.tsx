@@ -7,7 +7,7 @@ import { ApiError } from '../api';
 import { usePreferences } from '../hooks/usePreferences';
 import { useToast } from '../context/ToastContext';
 import type { Navigate } from '../types/nav';
-import type { PriceRange, UserPreferencesInput } from '../types/api';
+import type { PriceRange, UserPreferencesInput, SeatType } from '../types/api';
 import type { Filters } from '../lib/filters';
 import { PRICE_LABEL, SEAT_LABEL, SEAT_OPTIONS } from '../lib/labels';
 import { Button, Icon, Tag } from '../components/ui';
@@ -18,6 +18,7 @@ const FALLBACK: UserPreferencesInput = {
   needPowerOutlet: true,
   wifiQuality: 'high',
   preferredSeatType: 'table',
+  preferredSeatTypes: ['table'],
   priceRange: 'medium',
 };
 
@@ -43,6 +44,11 @@ export function Preferences({
         needPowerOutlet: preferences.needPowerOutlet,
         wifiQuality: preferences.wifiQuality,
         preferredSeatType: preferences.preferredSeatType,
+        preferredSeatTypes: preferences.preferredSeatTypes?.length
+          ? preferences.preferredSeatTypes
+          : preferences.preferredSeatType !== 'any'
+            ? [preferences.preferredSeatType]
+            : [],
         priceRange: preferences.priceRange,
       });
     }
@@ -163,6 +169,31 @@ export function Preferences({
     </div>
   );
 
+
+  const toggleSeatType = (seatType: SeatType) => {
+    const current = form.preferredSeatTypes ?? [];
+
+    if (seatType === 'any') {
+      setForm((prev) => ({
+        ...prev,
+        preferredSeatType: 'any',
+        preferredSeatTypes: [],
+      }));
+      return;
+    }
+
+    const next = current.includes(seatType)
+      ? current.filter((item) => item !== seatType)
+      : [...current, seatType];
+
+    setForm((prev) => ({
+      ...prev,
+      preferredSeatType: next[0] ?? 'any',
+      preferredSeatTypes: next,
+    }));
+  };
+
+
   return (
     <div style={{ maxWidth: 620, margin: '0 auto', padding: '40px 24px 60px' }}>
       <div style={{ marginBottom: 24 }}>
@@ -214,8 +245,8 @@ export function Preferences({
             {SEAT_OPTIONS.map((s) => (
               <Tag
                 key={s}
-                active={form.preferredSeatType === s}
-                onClick={() => set('preferredSeatType', s)}
+                active={s === 'any' ? (form.preferredSeatTypes?.length ?? 0) === 0 : (form.preferredSeatTypes ?? []).includes(s)}
+                onClick={() => toggleSeatType(s)}
               >
                 {SEAT_LABEL[s]}
               </Tag>

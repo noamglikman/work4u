@@ -1,5 +1,6 @@
 import os
 import math
+import re
 from decimal import Decimal
 
 import boto3
@@ -61,8 +62,10 @@ def get_all_venues(event):
         if venue.get("isActive", True) is True
     ]
 
+    unique_active_venues = dedupe_venues(active_venues)
+
     learning_profile = get_learning_profile_for_request(event)
-    filtered_venues = apply_filters_and_rank(active_venues, query_params, learning_profile)
+    filtered_venues = apply_filters_and_rank(unique_active_venues, query_params, learning_profile)
 
     return success_response(
         message="Venues loaded successfully",
@@ -90,6 +93,118 @@ def get_venue_by_id(venue_id):
     )
 
 
+
+def normalize_dedupe_text(value):
+    value = str(value or "").strip().lower()
+    value = value.replace("־", "-")
+    value = value.replace("–", "-")
+    value = value.replace("—", "-")
+    value = re.sub(r"[\"'״׳]", "", value)
+    value = re.sub(r"[\s\-_/,.:;()]+", "", value)
+    return value
+
+
+def normalize_dedupe_coord(value):
+    try:
+        if value is None or value == "":
+            return ""
+        return f"{float(value):.5f}"
+    except Exception:
+        return ""
+
+
+def venue_dedupe_keys(venue):
+    name = normalize_dedupe_text(venue.get("name"))
+    address = normalize_dedupe_text(venue.get("address"))
+    city = normalize_dedupe_text(venue.get("city"))
+    place_type = normalize_dedupe_text(venue.get("placeType"))
+
+    lat = normalize_dedupe_coord(venue.get("latitude") or venue.get("lat"))
+    lng = normalize_dedupe_coord(venue.get("longitude") or venue.get("lng"))
+
+    keys = []
+
+    if name and address:
+        keys.append(f"name_address:{name}|{address}")
+
+    if name and city:
+        keys.append(f"name_city:{name}|{city}")
+
+    if lat and lng and name:
+        keys.append(f"coord_name:{lat}|{lng}|{name}")
+
+    if lat and lng and address:
+        keys.append(f"coord_address:{lat}|{lng}|{address}")
+
+    if lat and lng and place_type:
+        keys.append(f"coord_type:{lat}|{lng}|{place_type}")
+
+    return keys
+
+
+def venue_quality_score(venue):
+    fields = [
+        "name",
+        "address",
+        "city",
+        "placeType",
+        "openingHours",
+        "description",
+        "phone",
+        "website",
+        "email",
+        "averageCoffeePrice",
+        "priceRange",
+        "wifiQuality",
+        "noiseLevel",
+    ]
+
+    filled = sum(1 for field in fields if venue.get(field) not in [None, "", [], {}])
+
+    images = venue.get("imageUrls") or []
+    image_count = len(images) if isinstance(images, list) else 0
+
+    try:
+        rating_count = int(venue.get("ratingCount", 0))
+    except Exception:
+        rating_count = 0
+
+    return (
+        rating_count,
+        image_count,
+        filled,
+        str(venue.get("updatedAt", "")),
+    )
+
+
+def dedupe_venues(venues):
+    """
+    Removes duplicate venues from the API response.
+
+    The DynamoDB table may contain duplicate places with small differences in
+    spelling, spaces, hyphens, or address formatting. We keep the richest record
+    and hide the rest from the API response.
+    """
+
+    sorted_venues = sorted(venues, key=venue_quality_score, reverse=True)
+
+    seen_keys = set()
+    unique = []
+
+    for venue in sorted_venues:
+        keys = venue_dedupe_keys(venue)
+
+        if keys and any(key in seen_keys for key in keys):
+            continue
+
+        for key in keys:
+            seen_keys.add(key)
+
+        unique.append(venue)
+
+    return unique
+
+
 def apply_filters_and_rank(venues, query_params, learning_profile=None):
     result = venues
 
@@ -98,6 +213,7 @@ def apply_filters_and_rank(venues, query_params, learning_profile=None):
     # These are now treated as preference signals, not hard filters.
     preferred_price_range = query_params.get("priceRange")
     preferred_wifi_quality = query_params.get("wifiQuality")
+    preferred_seat_types = parse_preferred_seat_types(query_params)
     prefers_quiet = query_params.get("quietEnvironment") == "true"
     prefers_power = query_params.get("needPowerOutlet") == "true"
 
@@ -137,6 +253,7 @@ def apply_filters_and_rank(venues, query_params, learning_profile=None):
             venue=venue,
             preferred_price_range=preferred_price_range,
             preferred_wifi_quality=preferred_wifi_quality,
+            preferred_seat_types=preferred_seat_types,
             prefers_quiet=prefers_quiet,
             prefers_power=prefers_power,
         )
@@ -161,10 +278,95 @@ def apply_filters_and_rank(venues, query_params, learning_profile=None):
     return ranked
 
 
+
+def parse_preferred_seat_types(query_params):
+    """
+    Supports:
+    preferredSeatType=table
+    preferredSeatTypes=table,sofa
+    preferredSeatTypes[]=table&preferredSeatTypes[]=sofa
+    """
+
+    valid = {"table", "sofa", "bar"}
+    values = []
+
+    raw_many = query_params.get("preferredSeatTypes") or query_params.get("preferredSeatTypes[]")
+    raw_one = query_params.get("preferredSeatType")
+
+    if raw_many:
+        values.extend(str(raw_many).split(","))
+
+    if raw_one:
+        values.append(raw_one)
+
+    cleaned = []
+
+    for value in values:
+        value = str(value or "").strip()
+
+        if value == "any":
+            continue
+
+        if value in valid and value not in cleaned:
+            cleaned.append(value)
+
+    return cleaned
+
+
+def calculate_seat_match_count(venue, preferred_seat_types):
+    if not preferred_seat_types:
+        return 0
+
+    text = build_search_text(venue).lower()
+
+    seat_keywords = {
+        "table": [
+            "שולחן",
+            "שולחנות",
+            "שולחן עבודה",
+            "עבודה",
+            "desk",
+            "table",
+            "tables",
+            "workspace",
+            "workstation",
+        ],
+        "sofa": [
+            "ספה",
+            "ספות",
+            "כורסה",
+            "כורסאות",
+            "לאונג",
+            "לאונג׳",
+            "lounge",
+            "sofa",
+            "couch",
+            "armchair",
+        ],
+        "bar": [
+            "בר",
+            "דלפק",
+            "counter",
+            "bar",
+        ],
+    }
+
+    matches = 0
+
+    for seat_type in preferred_seat_types:
+        keywords = seat_keywords.get(seat_type, [])
+
+        if any(keyword in text for keyword in keywords):
+            matches += 1
+
+    return matches
+
+
 def calculate_match_score(
     venue,
     preferred_price_range,
     preferred_wifi_quality,
+    preferred_seat_types,
     prefers_quiet,
     prefers_power,
 ):
@@ -177,6 +379,11 @@ def calculate_match_score(
     if preferred_wifi_quality:
         if venue.get("wifiQuality") == preferred_wifi_quality:
             score += 2
+
+    seat_match_count = calculate_seat_match_count(venue, preferred_seat_types)
+
+    if seat_match_count:
+        score += min(seat_match_count * 2, 4)
 
     if prefers_quiet:
         if venue.get("noiseLevel") == "low":

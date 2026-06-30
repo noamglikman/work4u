@@ -12031,6 +12031,34 @@ export const SEARCH_LOCATIONS: SearchLocationOption[] = [
 
 export type SearchLocationId = (typeof SEARCH_LOCATIONS)[number]['id'];
 
+
+function normalizeSearchLocationLabel(label: string): string {
+  return label
+    .trim()
+    .toLowerCase()
+    .replace(/[״"']/g, '')
+    .replace(/[־–—-]/g, ' ')
+    .replace(/\s+/g, ' ');
+}
+
+function dedupeSearchLocations<T extends { label: string }>(locations: T[]): T[] {
+  const seen = new Set<string>();
+
+  return locations.filter((location) => {
+    const key = normalizeSearchLocationLabel(location.label);
+
+    if (seen.has(key)) {
+      return false;
+    }
+
+    seen.add(key);
+    return true;
+  });
+}
+
+
+export const DEDUPED_SEARCH_LOCATIONS = dedupeSearchLocations(SEARCH_LOCATIONS);
+
 export function getSearchLocationById(id: string): SearchLocationOption {
-  return SEARCH_LOCATIONS.find((option) => option.id === id) ?? SEARCH_LOCATIONS[0];
+  return DEDUPED_SEARCH_LOCATIONS.find((option) => option.id === id) ?? SEARCH_LOCATIONS[0];
 }

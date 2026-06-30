@@ -34,6 +34,20 @@ type RatingTarget = { id: string; name: string; placeType?: string } | null;
 
 const isAuthScreen = (s: Screen) => s === 'login' || s === 'signup';
 
+
+function isCurrentLocationSearch(value: string): boolean {
+  const clean = value.trim().toLowerCase().replace(/\s+/g, ' ');
+
+  return [
+    'המיקום הנוכחי שלי',
+    'המיקום שלי',
+    'מיקום נוכחי',
+    'מיקום נוכחי שלי',
+    'current location',
+    'my location',
+  ].includes(clean);
+}
+
 export default function App() {
   const [showAdminVenues, setShowAdminVenues] = useState(false);
   const { isAuthenticated, isAdmin, loading: authLoading } = useAuth();
@@ -72,10 +86,28 @@ export default function App() {
     [searchLocationId],
   );
 
-  const effectiveLocation = selectedSearchLocation.location ?? location;
+  const searchMeansCurrentLocation = useMemo(
+    () => isCurrentLocationSearch(search),
+    [search],
+  );
+
+  useEffect(() => {
+    if (searchMeansCurrentLocation && searchLocationId !== 'current') {
+      setSearchLocationId('current');
+    }
+  }, [searchMeansCurrentLocation, searchLocationId]);
+
+  const effectiveLocation = searchMeansCurrentLocation
+    ? location
+    : selectedSearchLocation.location ?? location;
+
+  const effectiveSearch = searchMeansCurrentLocation ? '' : search;
 
   // Home venue list — only fetched once authenticated.
-  const query = useMemo(() => buildVenueQuery(filters, search, effectiveLocation), [filters, search, effectiveLocation]);
+  const query = useMemo(
+    () => buildVenueQuery(filters, effectiveSearch, effectiveLocation),
+    [filters, effectiveSearch, effectiveLocation],
+  );
   const currentLocationReady = searchLocationId !== 'current' || precise;
 
   const { venues, loading: venuesLoading, error: venuesError, reload: reloadVenues } = useVenues(

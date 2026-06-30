@@ -6,7 +6,7 @@ import { DEFAULT_FILTERS, type Filters } from '../lib/filters';
 import type { PriceRangeFilter, UserPreferencesInput } from '../types/api';
 import type { LatLng } from '../lib/geo';
 import { PRICE_FILTER_LABEL } from '../lib/labels';
-import { SEARCH_LOCATIONS } from '../lib/searchLocations';
+import { DEDUPED_SEARCH_LOCATIONS as SEARCH_LOCATIONS } from '../lib/searchLocations';
 import { Icon, OccPill, Photo, Tag, type IconName } from '../components/ui';
 import { MapCanvas } from '../components/MapCanvas';
 import { VenueListCard } from '../components/VenueListCard';

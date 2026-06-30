@@ -53,6 +53,7 @@ export interface UserPreferences {
   needPowerOutlet: boolean;
   wifiQuality: WifiQuality;
   preferredSeatType: SeatType;
+  preferredSeatTypes?: SeatType[];
   priceRange: PriceRange;
   favoriteVenueIds?: string[];
   updatedAt?: string;

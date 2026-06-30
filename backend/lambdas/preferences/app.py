@@ -98,6 +98,10 @@ def save_preferences(event):
         "needPowerOutlet": data["needPowerOutlet"],
         "wifiQuality": data["wifiQuality"],
         "preferredSeatType": data["preferredSeatType"],
+        "preferredSeatTypes": clean_preferred_seat_types(
+            data.get("preferredSeatTypes"),
+            data.get("preferredSeatType")
+        ),
         "priceRange": data["priceRange"],
         "favoriteVenueIds": clean_favorite_venue_ids(data.get("favoriteVenueIds", [])),
         "updatedAt": datetime.now(timezone.utc).isoformat()
@@ -110,6 +114,41 @@ def save_preferences(event):
         data=item
     )
 
+
+
+def clean_preferred_seat_types(value, fallback=None):
+    """
+    New format: preferredSeatTypes = ["table", "sofa"].
+    Backward compatibility: if the array is missing, derive it from preferredSeatType.
+    "any" means no specific seating preference.
+    """
+
+    if value is None:
+        if fallback and fallback != "any":
+            return [fallback]
+        return []
+
+    if not isinstance(value, list):
+        return []
+
+    cleaned = []
+
+    for seat_type in value:
+        if not isinstance(seat_type, str):
+            continue
+
+        seat_type = seat_type.strip()
+
+        if seat_type == "any":
+            continue
+
+        if seat_type not in VALID_SEAT_TYPES:
+            continue
+
+        if seat_type not in cleaned:
+            cleaned.append(seat_type)
+
+    return cleaned[:3]
 
 def clean_favorite_venue_ids(value):
     if value is None:
@@ -180,6 +219,25 @@ def validate_preferences(data):
             error_code="VALIDATION_ERROR",
             status_code=400
         )
+
+
+    preferred_seat_types = data.get("preferredSeatTypes")
+
+    if preferred_seat_types is not None:
+        if not isinstance(preferred_seat_types, list):
+            return error_response(
+                message="preferredSeatTypes must be a list",
+                error_code="VALIDATION_ERROR",
+                status_code=400
+            )
+
+        for seat_type in preferred_seat_types:
+            if seat_type not in VALID_SEAT_TYPES:
+                return error_response(
+                    message="preferredSeatTypes values must be one of: table, sofa, bar, any",
+                    error_code="VALIDATION_ERROR",
+                    status_code=400
+                )
 
     if data["priceRange"] not in VALID_PRICE_RANGES:
         return error_response(
