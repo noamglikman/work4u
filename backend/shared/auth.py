@@ -1,10 +1,10 @@
 def get_current_user(event):
-    """
+   """
     Extracts the current user from Cognito claims.
 
     During local/mock development, if Cognito claims are missing,
     returns a mock user so the backend can still be tested.
-    """
+    """ 
 
     request_context = event.get("requestContext", {})
     authorizer = request_context.get("authorizer", {})

@@ -2,7 +2,6 @@ import base64
 import json
 from decimal import Decimal
 
-
 def _json_default(value):
     if isinstance(value, Decimal):
         if value % 1 == 0:

@@ -10,7 +10,6 @@ from boto3.dynamodb.conditions import Key, Attr
 from shared.auth import get_current_user
 from shared.response import success_response, error_response, parse_json_body
 
-
 RATINGS_TABLE = os.environ.get("RATINGS_TABLE", "Work4U_Ratings")
 VENUES_TABLE = os.environ.get("VENUES_TABLE", "Work4U_Venues")
 
